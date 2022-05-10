@@ -1,9 +1,9 @@
-django-heroku
+pip
 discord 
 flask
 youtube_dl
 discord.py
-pip
+
 
 async_timeout
 
