@@ -1,6 +1,13 @@
-django
-gunicorn
 django-heroku
 discord 
 flask
 youtube-dl
+time
+os
+functools
+math
+async_timeout
+discord.ext
+itertools
+asyncio
+threading
