@@ -9,6 +9,7 @@ from keep_alive import keep_alive
 import youtube_dl
 from async_timeout import timeout
 from discord.ext import commands
+import ffmpeg
 
 # Silence useless bug reports messages
 youtube_dl.utils.bug_reports_message = lambda: ''
@@ -540,4 +541,4 @@ async def on_ready():
     await bot.change_presence(activity=discord.Game('with ass'))
 
 keep_alive()
-bot.run(os.environ['TOKEN'])
+bot.run('OTczMDE3NTg1MTk5MjM5MjQ4.YnhfPg.87ccuNtLGje3xdt_-reIDDbhVjE')
