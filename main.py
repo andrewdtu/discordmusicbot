@@ -251,7 +251,7 @@ class VoiceState:
                 # the player will disconnect due to performance
                 # reasons.
                 try:
-                    async with timeout(180):  # 3 minutes
+                    async with timeout(20):  # 3 minutes
                         self.current = await self.songs.get()
                 except asyncio.TimeoutError:
                     self.bot.loop.create_task(self.stop())
@@ -315,7 +315,7 @@ class Music(commands.Cog):
                                 error: commands.CommandError):
         await ctx.send('An error occurred: {}'.format(str(error)))
 
-    @commands.command(name='join', invoke_without_subcommand=True)
+    @commands.command(name='come', invoke_without_subcommand=True)
     async def _join(self, ctx: commands.Context):
         """Joins a voice channel."""
 
@@ -326,7 +326,7 @@ class Music(commands.Cog):
 
         ctx.voice_state.voice = await destination.connect()
 
-    @commands.command(name='summon')
+    @commands.command(name='goto')
     @commands.has_permissions(manage_guild=True)
     async def _summon(self,
                       ctx: commands.Context,
@@ -411,7 +411,7 @@ class Music(commands.Cog):
     @commands.command(name='skip')
     async def _skip(self, ctx: commands.Context):
         """Vote to skip a song. The requester can automatically skip.
-        3 skip votes are needed for the song to be skipped.
+        2 skip votes are needed for the song to be skipped.
         """
 
         if not ctx.voice_state.is_playing:
@@ -426,7 +426,7 @@ class Music(commands.Cog):
             ctx.voice_state.skip_votes.add(voter.id)
             total_votes = len(ctx.voice_state.skip_votes)
 
-            if total_votes >= 3:
+            if total_votes >= 2:
                 await ctx.message.add_reaction('⏭')
                 ctx.voice_state.skip()
             else:
@@ -526,17 +526,8 @@ class Music(commands.Cog):
                 await ctx.voice_state.songs.put(song)
                 await ctx.send('Enqueued {}'.format(str(source)))
 
-    @_join.before_invoke
-    @_play.before_invoke
-    async def ensure_voice_state(self, ctx: commands.Context):
-        if not ctx.author.voice or not ctx.author.voice.channel:
-            raise commands.CommandError(
-                'You are not connected to any voice channel.')
 
-        if ctx.voice_client:
-            if ctx.voice_client.channel != ctx.author.voice.channel:
-                raise commands.CommandError(
-                    'Bot is already in a voice channel.')
+
 
 
 bot = commands.Bot('`', description='Yet another music bot.')
@@ -546,7 +537,7 @@ bot.add_cog(Music(bot))
 @bot.event
 async def on_ready():
     print('Logged in as:\n{0.user.name}\n{0.user.id}'.format(bot))
-
+    await bot.change_presence(activity=discord.Game('with ass'))
 
 keep_alive()
 bot.run(os.environ['TOKEN'])
