@@ -1,14 +1,13 @@
 django-heroku
 discord 
 flask
+youtube_dl
 
-time
-os
-functools
-math
+
+
 async_timeout
 discord.ext
-itertools
+
 asyncio
 threading
 PyNaCl
