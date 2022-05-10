@@ -1,7 +1,7 @@
 django-heroku
 discord 
 flask
-youtube-dl
+youtube_dl
 time
 os
 functools
@@ -11,3 +11,5 @@ discord.ext
 itertools
 asyncio
 threading
+PyNaCl
+ffmpeg
