@@ -9,7 +9,6 @@ from keep_alive import keep_alive
 import youtube_dl
 from async_timeout import timeout
 from discord.ext import commands
-import ffmpeg
 
 # Silence useless bug reports messages
 youtube_dl.utils.bug_reports_message = lambda: ''
@@ -252,7 +251,7 @@ class VoiceState:
                 # the player will disconnect due to performance
                 # reasons.
                 try:
-                    async with timeout(10):  # 1 day
+                    async with timeout(86400):  # 1 day
                         self.current = await self.songs.get()
                 except asyncio.TimeoutError:
                     self.bot.loop.create_task(self.stop())
