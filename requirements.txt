@@ -9,6 +9,6 @@ async_timeout
 
 
 asyncio
-threading
+
 PyNaCl
 ffmpeg
