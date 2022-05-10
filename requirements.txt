@@ -1,7 +1,7 @@
 django-heroku
 discord 
 flask
-youtube_dl
+
 time
 os
 functools
