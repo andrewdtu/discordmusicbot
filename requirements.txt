@@ -6,7 +6,7 @@ youtube_dl
 
 
 async_timeout
-discord.ext
+
 
 asyncio
 threading
