@@ -534,7 +534,7 @@ class Music(commands.Cog):
 
 
 
-bot = commands.Bot(os.environ['COMMAND_PREFIX'], description='Yet another music bot.')
+bot = commands.Bot(';', description='Yet another music bot.')
 bot.add_cog(Music(bot))
 
 
