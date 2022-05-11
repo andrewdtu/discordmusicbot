@@ -7,3 +7,5 @@ async_timeout
 asyncio
 PyNaCl
 ffmpeg
+
+python-dotenv

@@ -9,7 +9,8 @@ from keep_alive import keep_alive
 import youtube_dl
 from async_timeout import timeout
 from discord.ext import commands
-
+from dotenv import load_dotenv
+load_dotenv()
 
 
 
