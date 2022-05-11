@@ -8,4 +8,5 @@ asyncio
 PyNaCl
 ffmpeg
 
+python-dotenv
 
