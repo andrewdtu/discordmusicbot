@@ -10,8 +10,6 @@ import youtube_dl
 from async_timeout import timeout
 from discord.ext import commands
 from dotenv import load_dotenv
-from discord import app_commands
-
 load_dotenv()
 
 
@@ -532,26 +530,20 @@ class Music(commands.Cog):
 
                 await ctx.voice_state.songs.put(song)
                 await ctx.send('Enqueued {}'.format(str(source)))
-    
 
 
 
-keep_alive()
+
+
 bot = commands.Bot(os.environ['COMMAND_PREFIX'], description='Yet another music bot.')
-
+bot.add_cog(Music(bot))
 
 
 @bot.event
 async def on_ready():
-    print(f'Logged in as {bot.user} (ID: {bot.user.id})')
-    print('------')
+    print('Logged in as:\n{0.user.name}\n{0.user.id}'.format(bot))
     await bot.change_presence(activity=discord.Game('with ass'))
+    
 
-async def setup(bot: commands.Bot) -> None:
-    async with bot:
-        await bot.add_cog(Music(bot))
-        await bot.start(os.environ['TOKEN'])
-
-
-asyncio.run(main())
-
+keep_alive()
+bot.run(os.environ['TOKEN'])
