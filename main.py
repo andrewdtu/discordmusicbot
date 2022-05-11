@@ -532,10 +532,7 @@ class Music(commands.Cog):
 
                 await ctx.voice_state.songs.put(song)
                 await ctx.send('Enqueued {}'.format(str(source)))
-    @app_commands.command(name="test")
-    async def my_command(self, interaction: discord.Interaction) -> None:
-        """ /test """
-        await interaction.response.send_message("yes")
+    
 
 
 
