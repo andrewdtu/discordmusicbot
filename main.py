@@ -534,16 +534,22 @@ class Music(commands.Cog):
 
 
 
-
+keep_alive()
 bot = commands.Bot(os.environ['COMMAND_PREFIX'], description='Yet another music bot.')
-bot.add_cog(Music(bot))
+
 
 
 @bot.event
 async def on_ready():
-    print('Logged in as:\n{0.user.name}\n{0.user.id}'.format(bot))
+    print(f'Logged in as {bot.user} (ID: {bot.user.id})')
+    print('------')
     await bot.change_presence(activity=discord.Game('with ass'))
-    await ctx.send("OPTIMUS PRIME ONLINE")
 
-keep_alive()
-bot.run(os.environ['TOKEN'])
+async def main():
+    async with bot:
+        await bot.add_cog(Music(bot))
+        await bot.start(os.environ['TOKEN'])
+
+
+asyncio.run(main())
+
