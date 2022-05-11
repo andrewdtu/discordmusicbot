@@ -3,12 +3,9 @@ discord
 flask
 youtube_dl
 discord.py
-
-
 async_timeout
-
-
 asyncio
-
 PyNaCl
 ffmpeg
+
+dotenv

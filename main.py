@@ -9,9 +9,9 @@ from keep_alive import keep_alive
 import youtube_dl
 from async_timeout import timeout
 from discord.ext import commands
+from dotenv import load_dotenv
 
-
-
+load_dotenv()
 
 # Silence useless bug reports messages
 youtube_dl.utils.bug_reports_message = lambda: ''
@@ -487,19 +487,19 @@ class Music(commands.Cog):
         ctx.voice_state.songs.remove(index - 1)
         await ctx.message.add_reaction('✅')
 
-    @commands.command(name='loop')
-    async def _loop(self, ctx: commands.Context):
-        """Loops the currently playing song.
+    # @commands.command(name='loop')
+    # async def _loop(self, ctx: commands.Context):
+    #     """Loops the currently playing song.
 
-        Invoke this command again to unloop the song.
-        """
+    #     Invoke this command again to unloop the song.
+    #     """
 
-        if not ctx.voice_state.is_playing:
-            return await ctx.send('Nothing being played at the moment.')
+    #     if not ctx.voice_state.is_playing:
+    #         return await ctx.send('Nothing being played at the moment.')
 
-        # Inverse boolean value to loop and unloop.
-        ctx.voice_state.loop = not ctx.voice_state.loop
-        await ctx.message.add_reaction('✅')
+    #     # Inverse boolean value to loop and unloop.
+    #     ctx.voice_state.loop = not ctx.voice_state.loop
+    #     await ctx.message.add_reaction('✅')
 
     @commands.command(name='play',aliases=['p'])
     async def _play(self, ctx: commands.Context, *, search: str):
@@ -534,7 +534,7 @@ class Music(commands.Cog):
 
 
 
-bot = commands.Bot('`', description='Yet another music bot.')
+bot = commands.Bot(os.environ['COMMAND_PREFIX'], description='Yet another music bot.')
 bot.add_cog(Music(bot))
 
 
@@ -544,4 +544,4 @@ async def on_ready():
     await bot.change_presence(activity=discord.Game('with ass'))
 
 keep_alive()
-bot.run('OTczMDE3NTg1MTk5MjM5MjQ4.YnhfPg.87ccuNtLGje3xdt_-reIDDbhVjE')
+bot.run(os.environ['TOKEN'])
