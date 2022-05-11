@@ -10,6 +10,8 @@ import youtube_dl
 from async_timeout import timeout
 from discord.ext import commands
 from dotenv import load_dotenv
+from discord import app_commands
+
 load_dotenv()
 
 
@@ -530,7 +532,10 @@ class Music(commands.Cog):
 
                 await ctx.voice_state.songs.put(song)
                 await ctx.send('Enqueued {}'.format(str(source)))
-
+    @app_commands.command(name="test")
+    async def my_command(self, interaction: discord.Interaction) -> None:
+        """ /test """
+        await interaction.response.send_message("yes")
 
 
 
@@ -545,7 +550,7 @@ async def on_ready():
     print('------')
     await bot.change_presence(activity=discord.Game('with ass'))
 
-async def main():
+async def setup(bot: commands.Bot) -> None:
     async with bot:
         await bot.add_cog(Music(bot))
         await bot.start(os.environ['TOKEN'])
