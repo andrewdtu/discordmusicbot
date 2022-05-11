@@ -543,6 +543,7 @@ bot.add_cog(Music(bot))
 async def on_ready():
     print('Logged in as:\n{0.user.name}\n{0.user.id}'.format(bot))
     await bot.change_presence(activity=discord.Game('with ass'))
+    await ctx.send("OPTIMUS PRIME ONLINE")
 
 keep_alive()
 bot.run(os.environ['TOKEN'])
