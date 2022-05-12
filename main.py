@@ -528,7 +528,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name='play',aliases=['p'])
     @app_commands.describe(search = 'Title of song or youtube URL')
     async def _play(self, ctx: commands.Context, *, search: str):
-        """Plays a song.
+        """Plays a song, press enter to start typing in the argument for URL or song name.
 
         If there are songs in the queue, this will be queued until the
         other songs finished playing.
