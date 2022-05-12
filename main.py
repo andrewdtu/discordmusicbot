@@ -398,7 +398,7 @@ class Music(commands.Cog):
         #await bot.tree.sync(guild=discord.Object(id=373491685331828756))
         await bot.tree.sync()
 
-    @commands.command(name='pause')
+    @commands.hybrid_command(name='pause')
     #@commands.has_permissions(manage_guild=True)
     async def _pause(self, ctx: commands.Context):
         """Pauses the currently playing song."""
