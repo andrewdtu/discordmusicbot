@@ -388,13 +388,14 @@ class Music(commands.Cog):
         await ctx.send(embed=ctx.voice_state.current.create_embed())
 
     @commands.hybrid_command(name='sync')
-    @commands.has_permissions(manage_guild=True)
+    #@commands.has_permissions(manage_guild=True)
     async def _sync(self, ctx: commands.Context):
         """**DEVELOPER COMMAND syncs updated commands**"""
         await ctx.send('syncing')
         #bot.tree.copy_global_to(guild=discord.Object(id=373491685331828756))
-        await bot.tree.sync(guild=discord.Object(id=396633477186977812))
-        #await bot.tree.sync()
+        #await bot.tree.sync(guild=discord.Object(id=396633477186977812))
+        #await bot.tree.sync(guild=discord.Object(id=373491685331828756))
+        await bot.tree.sync()
 
     @commands.command(name='pause')
     #@commands.has_permissions(manage_guild=True)
@@ -551,7 +552,7 @@ class Music(commands.Cog):
                 song = Song(source)
 
                 await ctx.voice_state.songs.put(song)
-                await ctx.send('{} Enqueued {}'.format(ctx.author,str(source)))
+                await ctx.send('{} Enqueued {}'.format(ctx.author.mention,str(source)))
 
 
 
@@ -576,7 +577,7 @@ async def on_ready():
     print('Logged in as:\n{0.user.name}\n{0.user.id}'.format(bot))
     print(f"Discord API version: {discord.__version__}")
     await bot.change_presence(activity=discord.Game('with ass'))
-    print(await bot.tree.fetch_commands())
+    #print(await bot.tree.fetch_commands())
     
 
 async def main():
