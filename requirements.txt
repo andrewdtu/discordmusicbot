@@ -1,8 +1,8 @@
 pip
-discord==2.0.0a4263+g863df7d0
+#discord==2.0.0a4263+g863df7d0
 flask
 youtube_dl
-discord.py==2.0.0a4263
+#discord.py==2.0.0a4263
 async_timeout
 asyncio
 PyNaCl
