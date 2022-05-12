@@ -1,4 +1,5 @@
 pip
+git+https://github.com/Rapptz/discord.py
 #discord==2.0.0a4263+g863df7d0
 flask
 youtube_dl
