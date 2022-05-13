@@ -311,7 +311,7 @@ class Music(commands.Cog):
     def cog_check(self, ctx: commands.Context):
         if not ctx.guild:
             raise commands.NoPrivateMessage(
-                'This command can\'t be used in DM channels.')
+                'You tryin to slide into my DM\'s?')
 
         return True
 
@@ -329,32 +329,27 @@ class Music(commands.Cog):
         destination = ctx.author.voice.channel
         if ctx.voice_state.voice:
             await ctx.voice_state.voice.move_to(destination)
+            await ctx.send('Joining {} '.format(ctx.author.mention))
             return
 
         ctx.voice_state.voice = await destination.connect()
-
+        await ctx.send('Joining {} '.format(ctx.author.mention))
     @commands.hybrid_command(name='goto',aliases=['summon'])
     #@commands.has_permissions(manage_guild=True)
-    async def _summon(self,
-                      ctx: commands.Context,
-                      *,
-                      channel: discord.VoiceChannel = None):
+    async def _summon(self, ctx: commands.Context, channel: discord.VoiceChannel):
         """Sends the bot to a voice channel.
 
         If no channel was specified, it joins your channel.
         """
 
-        if not channel and not ctx.author.voice:
-            raise VoiceError(
-                'You are neither connected to a voice channel nor specified a channel to join.'
-            )
-
-        destination = channel or ctx.author.voice.channel
+        destination = channel
         if ctx.voice_state.voice:
             await ctx.voice_state.voice.move_to(destination)
+            await ctx.send('Joining {}'.format(destination))
             return
 
         ctx.voice_state.voice = await destination.connect()
+        await ctx.send('Joining {}'.format(destination))
 
     @commands.hybrid_command(name='leave', aliases=['getout','l','fuckoff'])
     #@commands.has_permissions(manage_guild=True)
@@ -366,12 +361,15 @@ class Music(commands.Cog):
 
         await ctx.voice_state.stop()
         del self.voice_states[ctx.guild.id]
+        await ctx.send('OK bye')
 
     @commands.hybrid_command(name='volume')
     @app_commands.describe(volume = 'Volume from 0 to 100')
     @commands.has_permissions(manage_guild=True)
-    async def _volume(self, ctx: commands.Context, *,    volume: int):
+    async def _volume(self, ctx: commands.Context, volume: int = None):
         """Sets the volume of the player."""
+        if not volume:
+            return await ctx.send(ctx.voice_state.volume*100)
 
         if not ctx.voice_state.is_playing:
             return await ctx.send('Nothing being played at the moment.')
@@ -392,11 +390,12 @@ class Music(commands.Cog):
     #@commands.has_permissions(manage_guild=True)
     async def _sync(self, ctx: commands.Context):
         """**DEVELOPER COMMAND syncs updated commands**"""
-        await ctx.send('syncing')
+        
         #bot.tree.copy_global_to(guild=discord.Object(id=373491685331828756))
         #await bot.tree.sync(guild=discord.Object(id=396633477186977812))
         #await bot.tree.sync(guild=discord.Object(id=373491685331828756))
         await bot.tree.sync()
+        await ctx.send('syncing')
 
     @commands.hybrid_command(name='pause')
     #@commands.has_permissions(manage_guild=True)
@@ -507,11 +506,13 @@ class Music(commands.Cog):
         if len(ctx.voice_state.songs) == 0:
             return await ctx.send('Empty queue.')
 
+        await ctx.send('Removing {0.source.title} at index:{1}'.format(ctx.voice_state.songs[index-1],index))
         ctx.voice_state.songs.remove(index - 1)
         #await ctx.message.add_reaction('✅')
-        await ctx.send('Removing song at index:{}'.format(index))
+        
+        
 
-    # @commands.command(name='loop')
+    # @commands.hybrid_command(name='loop')
     # async def _loop(self, ctx: commands.Context):
     #     """Loops the currently playing song.
 
@@ -523,7 +524,7 @@ class Music(commands.Cog):
 
     #     # Inverse boolean value to loop and unloop.
     #     ctx.voice_state.loop = not ctx.voice_state.loop
-    #     await ctx.message.add_reaction('✅')
+    #     await ctx.send('looping')
 
     @commands.hybrid_command(name='play',aliases=['p'])
     @app_commands.describe(search = 'Title of song or youtube URL')
@@ -556,27 +557,44 @@ class Music(commands.Cog):
                 await ctx.send('{} Enqueued {}'.format(ctx.author.mention,str(source)))
 
 
+    # @app_commands.command(name="hello")
+    # async def hello(self, interaction: discord.Interaction):
+    #     """Says hello!"""
+    #     await interaction.response.send_message(f'Hi, {interaction.user.mention}')
 
 
-        
 
 
 
 intents = discord.Intents().all()
-
-
-MY_GUILD = discord.Object(id=373491685331828756)
-
-
+#MY_GUILD = discord.Object(id=373491685331828756)
 bot = commands.Bot(command_prefix=commands.when_mentioned_or(os.environ['COMMAND_PREFIX']),intents = intents, description='Much better than fredboat')
+
+
+
+@bot.tree.context_menu(name='Show Join Date')
+async def show_join_date(interaction: discord.Interaction, member: discord.Member):
+    # The format_dt function formats the date time into a human readable representation in the official client
+    await interaction.response.send_message(f'{member} joined at {discord.utils.format_dt(member.joined_at)}')
+
+# @bot.tree.command()
+# async def my_command(interaction: discord.Interaction) -> None:
+#   await interaction.response.send_message("Hello from my command!")
+# ### NOTE: the above is a global command, see the `main()` func below:
+
+
+
+
+
 
 
 
 
 @bot.event  
 async def on_ready():
-    print('Logged in as:\n{0.user.name}\n{0.user.id}'.format(bot))
+    print('Logged in as:\nBOT:{0.user.name}\nUSER:{0.user.id}'.format(bot))
     print(f"Discord API version: {discord.__version__}")
+    print('Command Prefix:',os.environ['COMMAND_PREFIX'])
     await bot.change_presence(activity=discord.Game('with ass'))
     #print(await bot.tree.fetch_commands())
     
