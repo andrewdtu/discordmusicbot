@@ -1,3 +1,4 @@
+from cProfile import label
 from re import search
 import discord
 import asyncio
@@ -12,14 +13,16 @@ from async_timeout import timeout
 from discord.ext import commands
 from dotenv import load_dotenv
 from discord import app_commands
-
+from discord.ui import Button, View
 load_dotenv()
 
 
 
 # Silence useless bug reports messages
 youtube_dl.utils.bug_reports_message = lambda: ''
-
+intents = discord.Intents().all()
+#MY_GUILD = discord.Object(id=373491685331828756)
+bot = commands.Bot(command_prefix=commands.when_mentioned_or(os.environ['COMMAND_PREFIX']),intents = intents, description='Much better than fredboat')
 
 class VoiceError(Exception):
     pass
@@ -209,7 +212,7 @@ class SongQueue(asyncio.Queue):
         del self._queue[index]
 
 
-class VoiceState:
+class VoiceState(discord.VoiceState):
     def __init__(self, bot: commands.Bot, ctx: commands.Context):
         self.bot = bot
         self._ctx = ctx
@@ -334,6 +337,7 @@ class Music(commands.Cog):
 
         ctx.voice_state.voice = await destination.connect()
         await ctx.send('Joining {} '.format(ctx.author.mention))
+
     @commands.hybrid_command(name='goto',aliases=['summon'])
     #@commands.has_permissions(manage_guild=True)
     async def _summon(self, ctx: commands.Context, channel: discord.VoiceChannel):
@@ -556,20 +560,47 @@ class Music(commands.Cog):
                 await ctx.voice_state.songs.put(song)
                 await ctx.send('{} Enqueued {}'.format(ctx.author.mention,str(source)))
 
+    @commands.hybrid_command(name='player')
+    
+    async def player(self,ctx: commands.Context):
+        """Music player GUI buttons"""
+        view=MyView()
+        await ctx.send("Music player",view=view)
+ 
 
-    # @app_commands.command(name="hello")
-    # async def hello(self, interaction: discord.Interaction):
-    #     """Says hello!"""
-    #     await interaction.response.send_message(f'Hi, {interaction.user.mention}')
+class MyView(View):
+
+
+    @discord.ui.button(label = 'Pause', style = discord.ButtonStyle.red)
+    async def pause_button(self, interaction:discord.Interaction, button: discord.ui.Button):
+        
+        
+        interaction.guild.voice_client.pause()
+        await interaction.response.edit_message(content = f'Pausing',view = self)
+        #await interaction.followup.send('Pausing')
+        
+        
+        
+        
+        #await Music._pause(ctx)
+    @discord.ui.button(label = 'Resume', style = discord.ButtonStyle.green)
+    async def resume_button(self, interaction:discord.Interaction, button: discord.ui.Button):
+        
+        
+        interaction.guild.voice_client.resume()
+        await interaction.response.edit_message(content = f'Resuming',view = self)
+        #await interaction.followup.send('Resuming')
+        
+        
+        
+        
+        #await Music._pause(ctx)
+        
 
 
 
-
-
-intents = discord.Intents().all()
-#MY_GUILD = discord.Object(id=373491685331828756)
-bot = commands.Bot(command_prefix=commands.when_mentioned_or(os.environ['COMMAND_PREFIX']),intents = intents, description='Much better than fredboat')
-
+    
+    
 
 
 @bot.tree.context_menu(name='Show Join Date')
@@ -578,9 +609,10 @@ async def show_join_date(interaction: discord.Interaction, member: discord.Membe
     await interaction.response.send_message(f'{member} joined at {discord.utils.format_dt(member.joined_at)}')
 
 # @bot.tree.command()
-# async def my_command(interaction: discord.Interaction) -> None:
+# async def hello(interaction: discord.Interaction) -> None:
 #   await interaction.response.send_message("Hello from my command!")
 # ### NOTE: the above is a global command, see the `main()` func below:
+
 
 
 
@@ -597,10 +629,11 @@ async def on_ready():
     print('Command Prefix:',os.environ['COMMAND_PREFIX'])
     await bot.change_presence(activity=discord.Game('with ass'))
     #print(await bot.tree.fetch_commands())
-    
+
 
 async def main():
     async with bot:
+        
         await bot.add_cog(Music(bot))
         await bot.start(os.environ['TOKEN'])
         
