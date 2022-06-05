@@ -661,8 +661,14 @@ async def on_voice_state_update(member,before,after):
     print("{member},Joined")
     logchannel = discord.utils.get(member.guild.text_channels, name="logs")
     if not before.channel and after.channel:
-        
         await logchannel.send(f"""{member.mention}Joined {after.channel}""")
+    
+    
+    elif not after.channel and before.channel:
+        await logchannel.send(f"""{member.mention}Left {before.channel}""")
+
+    elif after.channel and before.channel:
+        await logchannel.send(f"""{member.mention}Left {before.channel} and joined {after.channel}""")
 
 @bot.event  
 async def on_ready():
