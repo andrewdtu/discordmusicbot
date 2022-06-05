@@ -673,7 +673,7 @@ async def on_voice_state_update(member,before,after):
     elif not after.channel and before.channel:
         await logchannel.send(f"""{member.mention}Left {before.channel}""")
 
-    elif after.channel and before.channel:
+    elif after.channel and before.channel  and (after.channel != before.channel):
         await logchannel.send(f"""{member.mention}Left {before.channel} and joined {after.channel}""")
 
 
