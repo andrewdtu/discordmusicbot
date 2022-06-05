@@ -604,7 +604,7 @@ class Music(commands.Cog):
     
     async def player(self,ctx: commands.Context):
         """Music player GUI buttons"""
-        view=MyView(timeout = None)
+        view=MyView(timeout = 180)
         await ctx.send("Music player",view=view)
 
 
