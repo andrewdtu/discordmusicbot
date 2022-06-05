@@ -294,10 +294,16 @@ class VoiceState(discord.VoiceState):
             self.voice = None
 
 class MyView(View):
+    def __init__(self,ctx):
+        super().__init__(timeout = 300)
+        self.ctx = ctx
+    
+    async def on_timeout(self):
+        for item in self.children:
+            item.disabled = True
 
-
-
-
+        
+        await self.message.edit(view=self)
 
     @discord.ui.button(label = 'Pause', style = discord.ButtonStyle.red)
     async def pause_button(self, interaction:discord.Interaction, button: discord.ui.Button):
@@ -320,7 +326,8 @@ class MyView(View):
             return
         else:
             interaction.response.edit_message(content = f'{interaction.user.mention} Resumed',view = self)
-        
+
+
     # @discord.ui.button(label = 'Resume', style = discord.ButtonStyle.green)
     # async def resume_button(self, interaction:discord.Interaction, button: discord.ui.Button):
     #     interaction.guild.voice_client.resume()
@@ -604,9 +611,8 @@ class Music(commands.Cog):
     
     async def player(self,ctx: commands.Context):
         """Music player GUI buttons"""
-        view=MyView(timeout = 180)
-        await ctx.send("Music player",view=view)
-
+        view=MyView(ctx)
+        view.message = await ctx.send('Music player', view=view)
 
     @commands.hybrid_command(name='fix')
     #@commands.has_permissions(manage_guild=True)
@@ -644,6 +650,7 @@ async def show_join_date(interaction: discord.Interaction, member: discord.Membe
     # The format_dt function formats the date time into a human readable representation in the official client
     await interaction.response.send_message(f'{member} joined at {discord.utils.format_dt(member.joined_at)}')
 
+
 # @bot.tree.command()
 # async def hello(interaction: discord.Interaction) -> None:
 #   await interaction.response.send_message("Hello from my command!")
@@ -663,12 +670,13 @@ async def on_voice_state_update(member,before,after):
     if not before.channel and after.channel:
         await logchannel.send(f"""{member.mention}Joined {after.channel}""")
     
-    
     elif not after.channel and before.channel:
         await logchannel.send(f"""{member.mention}Left {before.channel}""")
 
     elif after.channel and before.channel:
         await logchannel.send(f"""{member.mention}Left {before.channel} and joined {after.channel}""")
+
+
 
 @bot.event  
 async def on_ready():
