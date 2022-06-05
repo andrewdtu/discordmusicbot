@@ -293,6 +293,46 @@ class VoiceState(discord.VoiceState):
             await self.voice.disconnect()
             self.voice = None
 
+class MyView(View):
+
+
+
+
+
+    @discord.ui.button(label = 'Pause', style = discord.ButtonStyle.red)
+    async def pause_button(self, interaction:discord.Interaction, button: discord.ui.Button):
+        if interaction.guild.voice_client.is_playing():
+            button.style = discord.ButtonStyle.green
+            button.label = 'Resume'
+            interaction.guild.voice_client.pause()
+            await interaction.response.edit_message(content = f'{interaction.user.mention} Paused',view = self)
+            asyncio.sleep(15)
+            await interaction.response.edit_message(content = f'Music player controls',view = self)            
+            return
+
+        elif interaction.guild.voice_client.is_paused():
+            button.style = discord.ButtonStyle.red
+            button.label = 'Pause'
+            interaction.guild.voice_client.resume()
+            await interaction.response.edit_message(content = f'{interaction.user.mention} Resumed',view = self)
+            asyncio.sleep(15)
+            await interaction.response.edit_message(content = f'Music player controls',view = self)
+            return
+        else:
+            interaction.response.edit_message(content = f'{interaction.user.mention} Resumed',view = self)
+        
+    # @discord.ui.button(label = 'Resume', style = discord.ButtonStyle.green)
+    # async def resume_button(self, interaction:discord.Interaction, button: discord.ui.Button):
+    #     interaction.guild.voice_client.resume()
+    #     await interaction.response.edit_message(content = f'Resuming',view = self)
+
+
+    @discord.ui.button(label = 'Skip', style = discord.ButtonStyle.blurple)
+    async def skip_button(self, interaction:discord.Interaction, button: discord.ui.Button):
+        interaction.guild.voice_client.stop()
+        await interaction.response.edit_message(content = f'{interaction.user.mention} Skipped',view = self)
+
+
 
 class Music(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -387,7 +427,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name='now', aliases=['current', 'playing'])
     async def _now(self, ctx: commands.Context):
         """Displays the currently playing song."""
-
+        
         await ctx.send(embed=ctx.voice_state.current.create_embed())
 
     @commands.hybrid_command(name='sync')
@@ -566,45 +606,30 @@ class Music(commands.Cog):
         """Music player GUI buttons"""
         view=MyView(timeout = None)
         await ctx.send("Music player",view=view)
- 
-
-class MyView(View):
 
 
+    @commands.hybrid_command(name='fix')
+    #@commands.has_permissions(manage_guild=True)
+    async def fix(self, ctx: commands.Context):
+        """Tries to fix the bot if broken"""
+        try:
+
+            ctx.voice_state.voice.pause()
+            ctx.voice_state.skip()
+            ctx.voice_state.songs.clear()
+            await ctx.voice_state.stop()
+            del self.voice_states[ctx.guild.id]
+
+        except:
+            await ctx.send('fixing')
 
 
+    
+    # @commands.hybrid_command(name='log')
+    # async def log(self, ctx: commands.Context):
+    #     logchannel = discord.utils.get(ctx.guild.text_channels, name="logs")
+    #     await logchannel.send('Joined')
 
-    @discord.ui.button(label = 'Pause', style = discord.ButtonStyle.red)
-    async def pause_button(self, interaction:discord.Interaction, button: discord.ui.Button):
-        if interaction.guild.voice_client.is_playing():
-            button.style = discord.ButtonStyle.green
-            button.label = 'Resume'
-            interaction.guild.voice_client.pause()
-            await interaction.response.edit_message(content = f'{interaction.user.mention} Paused',view = self)
-            asyncio.sleep(15)
-            await interaction.response.edit_message(content = f'Music player controls',view = self)            
-            return
-
-        elif interaction.guild.voice_client.is_paused():
-            button.style = discord.ButtonStyle.red
-            button.label = 'Pause'
-            interaction.guild.voice_client.resume()
-            await interaction.response.edit_message(content = f'{interaction.user.mention} Resumed',view = self)
-            asyncio.sleep(15)
-            await interaction.response.edit_message(content = f'Music player controls',view = self)
-            return
-
-        
-    # @discord.ui.button(label = 'Resume', style = discord.ButtonStyle.green)
-    # async def resume_button(self, interaction:discord.Interaction, button: discord.ui.Button):
-    #     interaction.guild.voice_client.resume()
-    #     await interaction.response.edit_message(content = f'Resuming',view = self)
-
-
-    @discord.ui.button(label = 'Skip', style = discord.ButtonStyle.blurple)
-    async def skip_button(self, interaction:discord.Interaction, button: discord.ui.Button):
-        interaction.guild.voice_client.stop()
-        await interaction.response.edit_message(content = f'{interaction.user.mention} Skipped',view = self)
 
 
 
@@ -631,7 +656,13 @@ async def show_join_date(interaction: discord.Interaction, member: discord.Membe
 
 
 
-
+@bot.event
+async def on_voice_state_update(member,before,after):
+    print("{member},Joined")
+    logchannel = discord.utils.get(member.guild.text_channels, name="logs")
+    if not before.channel and after.channel:
+        
+        await logchannel.send(f"""{member.mention}Joined {after.channel}""")
 
 @bot.event  
 async def on_ready():
@@ -648,7 +679,6 @@ async def main():
         await bot.add_cog(Music(bot))
         await bot.start(os.environ['TOKEN'])
         
-
 
 
 asyncio.run(main())
