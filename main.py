@@ -22,7 +22,7 @@ load_dotenv()
 youtube_dl.utils.bug_reports_message = lambda: ''
 intents = discord.Intents().all()
 #MY_GUILD = discord.Object(id=373491685331828756)
-bot = commands.Bot(command_prefix=commands.when_mentioned_or(os.environ['COMMAND_PREFIX']),intents = intents, description='Much better than fredboat')
+bot = commands.Bot(command_prefix=commands.when_mentioned_or(os.environ['COMMAND_PREFIX'],"/"),intents = intents, description='Much better than fredboat')
 
 class VoiceError(Exception):
     pass
@@ -325,7 +325,7 @@ class MyView(View):
             await interaction.response.edit_message(content = f'Music player controls',view = self)
             return
         else:
-            interaction.response.edit_message(content = f'{interaction.user.mention} Resumed',view = self)
+            interaction.response.edit_message(content = f'{interaction.user.mention} not playing music',view = self)
 
 
     # @discord.ui.button(label = 'Resume', style = discord.ButtonStyle.green)
@@ -372,7 +372,7 @@ class Music(commands.Cog):
                                 error: commands.CommandError):
         await ctx.send('An error occurred: {}'.format(str(error)))
 
-    @commands.hybrid_command(name='come', invoke_without_subcommand=True)
+    @commands.hybrid_command(name='come')
     async def _join(self, ctx: commands.Context):
         """Joins your voice channel."""
 
@@ -416,7 +416,7 @@ class Music(commands.Cog):
 
     @commands.hybrid_command(name='volume')
     @app_commands.describe(volume = 'Volume from 0 to 100')
-    @commands.has_permissions(manage_guild=True)
+    #@commands.has_permissions(manage_guild=True)
     async def _volume(self, ctx: commands.Context, volume: int = None):
         """Sets the volume of the player."""
         if not volume:
@@ -590,7 +590,10 @@ class Music(commands.Cog):
         """
 
         if not ctx.voice_state.voice:
-            await ctx.invoke(self._join)
+            #await ctx.invoke(self._join)
+            destination = ctx.author.voice.channel
+            ctx.voice_state.voice = await destination.connect()
+            #await ctx.send('Joining {} '.format(ctx.author.mention))        
 
         async with ctx.typing():
             try:
@@ -625,6 +628,7 @@ class Music(commands.Cog):
             ctx.voice_state.songs.clear()
             await ctx.voice_state.stop()
             del self.voice_states[ctx.guild.id]
+            await ctx.send('fixing')
 
         except:
             await ctx.send('fixing')
