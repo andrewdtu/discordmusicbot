@@ -7,7 +7,7 @@ import itertools
 import math
 import random
 import os
-from keep_alive import keep_alive
+#from keep_alive import keep_alive
 import youtube_dl
 from async_timeout import timeout
 from discord.ext import commands
