@@ -13,13 +13,14 @@ from async_timeout import timeout
 from discord.ext import commands
 from dotenv import load_dotenv
 from discord import app_commands
-from discord.ui import Button, View
+from discord.ui import Button, View 
 load_dotenv()
 
 
 
 # Silence useless bug reports messages
-youtube_dl.utils.bug_reports_message = lambda: ''
+#youtube_dl.utils.bug_reports_message = lambda: ''
+
 intents = discord.Intents().all()
 #MY_GUILD = discord.Object(id=373491685331828756)
 bot = commands.Bot(command_prefix=commands.when_mentioned_or(os.environ['COMMAND_PREFIX'],"/"),intents = intents, description='Much better than fredboat')
