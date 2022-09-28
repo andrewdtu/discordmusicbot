@@ -637,7 +637,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name='servercount')
     #@commands.has_permissions(manage_guild=True)
     async def fix(self, ctx: commands.Context):
-        """tells how many servers the bot is in"""      
+        """Tells how many servers the bot is in"""      
         await ctx.send('I am serving {} humans and {} bots across {} servers'.format(sum(not m.bot for m in bot.get_all_members()),sum(m.bot for m in bot.get_all_members()),len(self.bot.guilds)))
 
     
@@ -645,6 +645,14 @@ class Music(commands.Cog):
     # async def log(self, ctx: commands.Context):
     #     logchannel = discord.utils.get(ctx.guild.text_channels, name="logs")
     #     await logchannel.send('Joined')
+
+    @commands.hybrid_command(name='makelogs')
+    async def create_channel(self, ctx: commands.Context):
+        """Creates a logs text channel to send logging info"""
+        if not discord.utils.get(ctx.guild.text_channels, name='logs'):
+            channel = await ctx.guild.create_text_channel('logs')
+        else:
+            await ctx.send('logs already exists')
 
 
 
