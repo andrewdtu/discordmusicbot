@@ -328,7 +328,7 @@ class MyView(View):
             await interaction.response.edit_message(content = f'Music player controls',view = self)
             return
         else:
-            interaction.response.edit_message(content = f'{interaction.user.mention} not playing music',view = self)
+            await interaction.response.edit_message(content = f'{interaction.user.mention} not playing music',view = self)
 
 
     # @discord.ui.button(label = 'Resume', style = discord.ButtonStyle.green)
@@ -661,11 +661,7 @@ class Music(commands.Cog):
         """check if opus is loaded"""
         await ctx.send(discord.opus.is_loaded())
 
-    # @commands.hybrid_command(name='loadopus')
-    # async def load_opus(self, ctx: commands.Context):
-    #     """loads opus"""
 
-    #     discord.opus.load_opus(ctypes.util.find_library('opus'))    
     
 
 
