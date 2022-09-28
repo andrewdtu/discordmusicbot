@@ -661,12 +661,11 @@ class Music(commands.Cog):
         """check if opus is loaded"""
         await ctx.send(discord.opus.is_loaded())
 
-    @commands.hybrid_command(name='loadopus')
-    async def load_opus(self, ctx: commands.Context):
-        """loads opus"""
-        #await ctx.send(ctypes.util.find_library('opus'))
+    # @commands.hybrid_command(name='loadopus')
+    # async def load_opus(self, ctx: commands.Context):
+    #     """loads opus"""
 
-        discord.opus.load_opus(ctypes.util.find_library('libopus.so'))    
+    #     discord.opus.load_opus(ctypes.util.find_library('opus'))    
     
 
 
