@@ -661,6 +661,14 @@ class Music(commands.Cog):
         """check if opus is loaded"""
         await ctx.send(discord.opus.is_loaded())
 
+    @commands.command(name='listservers')
+    async def list_servers(self, ctx: commands.Context):
+        """lists servers bot is in"""
+        for server in self.bot.guilds:
+            await ctx.send('name:{}, owner: {}, ownerid:{},memercount: {}'.format(server.name, server.owner,server.owner_id,server.member_count,))
+            # for member in server.members:
+            #      await ctx.send('   member name:{}, memberid:{}'.format(member.name,member.id))
+
 
     
 
