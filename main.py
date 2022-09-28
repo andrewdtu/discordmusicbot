@@ -636,7 +636,7 @@ class Music(commands.Cog):
     
     @commands.hybrid_command(name='servercount')
     #@commands.has_permissions(manage_guild=True)
-    async def fix(self, ctx: commands.Context):
+    async def servercount(self, ctx: commands.Context):
         """Tells how many servers the bot is in"""      
         await ctx.send('I am serving {} humans and {} bots across {} servers'.format(sum(not m.bot for m in bot.get_all_members()),sum(m.bot for m in bot.get_all_members()),len(self.bot.guilds)))
 
@@ -653,6 +653,11 @@ class Music(commands.Cog):
             channel = await ctx.guild.create_text_channel('logs')
         else:
             await ctx.send('logs already exists')
+
+    @commands.hybrid_command(name='opusloaded')
+    async def create_channel(self, ctx: commands.Context):
+        """debug"""
+        await ctx.send(discord.opus.is_loaded())
 
 
 
