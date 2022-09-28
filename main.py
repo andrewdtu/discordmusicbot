@@ -313,7 +313,7 @@ class MyView(View):
             button.label = 'Resume'
             interaction.guild.voice_client.pause()
             await interaction.response.edit_message(content = f'{interaction.user.mention} Paused',view = self)
-            asyncio.sleep(15)
+            await asyncio.sleep(15)
             await interaction.response.edit_message(content = f'Music player controls',view = self)            
             return
 
@@ -322,7 +322,7 @@ class MyView(View):
             button.label = 'Pause'
             interaction.guild.voice_client.resume()
             await interaction.response.edit_message(content = f'{interaction.user.mention} Resumed',view = self)
-            asyncio.sleep(15)
+            await asyncio.sleep(15)
             await interaction.response.edit_message(content = f'Music player controls',view = self)
             return
         else:
@@ -633,7 +633,12 @@ class Music(commands.Cog):
 
         except:
             await ctx.send('fixing')
-
+    
+    @commands.hybrid_command(name='servercount')
+    #@commands.has_permissions(manage_guild=True)
+    async def fix(self, ctx: commands.Context):
+        """tells how many servers the bot is in"""      
+        await ctx.send('I am serving {} humans and {} bots across {} servers'.format(sum(not m.bot for m in bot.get_all_members()),sum(m.bot for m in bot.get_all_members()),len(self.bot.guilds)))
 
     
     # @commands.hybrid_command(name='log')
