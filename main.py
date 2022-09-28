@@ -1,4 +1,5 @@
 from cProfile import label
+import ctypes
 from re import search
 import discord
 import asyncio
@@ -14,6 +15,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from discord import app_commands
 from discord.ui import Button, View 
+import ctypes
 load_dotenv()
 
 
@@ -655,9 +657,17 @@ class Music(commands.Cog):
             await ctx.send('logs already exists')
 
     @commands.hybrid_command(name='opusloaded')
-    async def create_channel(self, ctx: commands.Context):
-        """debug"""
+    async def opus_loaded(self, ctx: commands.Context):
+        """check if opus is loaded"""
         await ctx.send(discord.opus.is_loaded())
+
+    @commands.hybrid_command(name='loadopus')
+    async def load_opus(self, ctx: commands.Context):
+        """loads opus"""
+        #await ctx.send(ctypes.util.find_library('opus'))
+
+        discord.opus.load_opus(ctypes.util.find_library('libopus.so'))    
+    
 
 
 
