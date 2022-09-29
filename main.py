@@ -657,17 +657,33 @@ class Music(commands.Cog):
             await ctx.send('logs already exists')
 
     @commands.hybrid_command(name='opusloaded')
+    @commands.is_owner()
     async def opus_loaded(self, ctx: commands.Context):
         """check if opus is loaded"""
         await ctx.send(discord.opus.is_loaded())
 
-    @commands.command(name='listservers')
+    @commands.hybrid_command(name='listservers')
+    @commands.is_owner()
     async def list_servers(self, ctx: commands.Context):
         """lists servers bot is in"""
+        
         for server in self.bot.guilds:
-            await ctx.send('name:{}, owner: {}, ownerid:{},memercount: {}'.format(server.name, server.owner,server.owner_id,server.member_count,))
+            await ctx.send('server name: {}, server id: {}, owner: {}, owner id: {},member count: {}'.format(server.name, server.id, server.owner,server.owner_id,server.member_count,))
             # for member in server.members:
             #      await ctx.send('   member name:{}, memberid:{}'.format(member.name,member.id))
+
+    @commands.hybrid_command(name='listmembers')
+    @commands.is_owner()
+    @app_commands.describe(serverid = 'server id of server to list members')
+    async def list_members(self, ctx: commands.Context, serverid: int):
+        """lists members of server id"""
+        
+        for server in self.bot.guilds:
+            if server.id == serverid:
+                #await ctx.send('server name: {}, server id: {}, owner: {}, owner id: {},member count: {}'.format(server.name, server.id, server.owner,server.owner_id,server.member_count,))
+                for member in server.members:
+                    await ctx.send('   member name:{}, memberid:{}'.format(member.name,member.id))
+                break
 
 
     
