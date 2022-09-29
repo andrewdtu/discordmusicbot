@@ -623,7 +623,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name='fix')
     #@commands.has_permissions(manage_guild=True)
     async def fix(self, ctx: commands.Context):
-        """Tries to fix the bot if broken"""
+        """Tries to fix the bot if broken, IF THIS DOESN'T WORK, use forcerestart"""
         try:
 
             ctx.voice_state.voice.pause()
@@ -682,8 +682,14 @@ class Music(commands.Cog):
             if server.id == serverid:
                 #await ctx.send('server name: {}, server id: {}, owner: {}, owner id: {},member count: {}'.format(server.name, server.id, server.owner,server.owner_id,server.member_count,))
                 for member in server.members:
-                    await ctx.send('   member name:{}, memberid:{}'.format(member.name,member.id))
+                    await ctx.send('member name:{}, memberid:{}'.format(member.name,member.id))
                 break
+
+    @commands.hybrid_command(name='forcerestart')
+    #@commands.is_owner()
+    async def shutdown(self, ctx: commands.Context):
+        """forces bot to restart"""
+        await ctx.bot.close()
 
 
     
