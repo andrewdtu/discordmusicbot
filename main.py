@@ -20,12 +20,14 @@ load_dotenv()
 
 
 
-# Silence useless bug reports messages
+## Silence useless bug reports messages
 #youtube_dl.utils.bug_reports_message = lambda: ''
 
-intents = discord.Intents().all()
-#MY_GUILD = discord.Object(id=373491685331828756)
-bot = commands.Bot(command_prefix=commands.when_mentioned_or(os.environ['COMMAND_PREFIX'],"/"),intents = intents, description='Much better than fredboat')
+nomention = discord.AllowedMentions.none()
+
+
+
+bot = commands.Bot(command_prefix=commands.when_mentioned_or(os.environ['COMMAND_PREFIX'],"/"),intents = discord.Intents().all(), description='Much better than fredboat', allowed_mentions=discord.AllowedMentions(roles=False, users=False, everyone=False))
 
 class VoiceError(Exception):
     pass
@@ -723,7 +725,7 @@ async def show_join_date(interaction: discord.Interaction, member: discord.Membe
 
 @bot.event
 async def on_voice_state_update(member,before,after):
-    print("{member},Joined")
+    #print("{member},Joined")
     logchannel = discord.utils.get(member.guild.text_channels, name="logs")
     if not before.channel and after.channel:
         await logchannel.send(f"""{member.mention}Joined {after.channel}""")
@@ -731,14 +733,14 @@ async def on_voice_state_update(member,before,after):
     elif not after.channel and before.channel:
         await logchannel.send(f"""{member.mention}Left {before.channel}""")
 
-    elif after.channel and before.channel  and (after.channel != before.channel):
+    elif after.channel and before.channel and (after.channel != before.channel):
         await logchannel.send(f"""{member.mention}Left {before.channel} and joined {after.channel}""")
 
 
 
 @bot.event  
 async def on_ready():
-    print('Logged in as:\nBOT:{0.user.name}\nUSER:{0.user.id}'.format(bot))
+    print('Logged in as:\nBOT:{0.user.name}\nUSER:{0.user.id}'.format(bot)) 
     print(f"Discord API version: {discord.__version__}")
     print('Command Prefix:',os.environ['COMMAND_PREFIX'])
     await bot.change_presence(activity=discord.Game('with ass'))
