@@ -228,7 +228,7 @@ class VoiceState(discord.VoiceState):
         self.songs = SongQueue()
 
         self._loop = False
-        self._volume = 0.1
+        self._volume = 0.5
         self.skip_votes = set()
 
         self.audio_player = bot.loop.create_task(self.audio_player_task())
@@ -266,13 +266,16 @@ class VoiceState(discord.VoiceState):
                 # the player will disconnect due to performance
                 # reasons.
                 try:
-                    async with timeout(5):  # 1 day
+                    async with timeout(129600):  # 1 day
                         self.current = await self.songs.get()
 
                 except asyncio.TimeoutError:
-                    self.bot.loop.create_task(self.close())
-                    #print('timedout from {}'.format(self.Guild.name))
-                    #self.bot.loop.create_task(self.)
+                    await self.bot.close()
+                    
+                    #self.bot.loop.create_task(self.stop())
+                    
+                    
+                    
                     return
 
             self.current.source.volume = self._volume
@@ -299,10 +302,11 @@ class VoiceState(discord.VoiceState):
         
         if self.voice:
             await self.voice.disconnect()
-            #self.current = None
-            
             self.voice = None
-            await self.del()
+            
+            
+            
+            
             
 
 class MyView(View):
@@ -472,7 +476,7 @@ class Music(commands.Cog):
             #await ctx.message.add_reaction('⏯')
             await ctx.send('Pausing')
 
-        elif (not ctx.voice_state.is_playing) and ctx.voice_state.voice.is_paused():
+        elif (not ctx.voice_state.is_playing) and not ctx.voice_state.voice.is_paused():
            await ctx.send('Not playing and is paused?') 
 
         elif ctx.voice_state.is_playing and not ctx.voice_state.voice.is_paused():
@@ -488,7 +492,7 @@ class Music(commands.Cog):
             #await ctx.message.add_reaction('⏯')
             await ctx.send('Resuming')
         
-        elif (not ctx.voice_state.is_playing) and ctx.voice_state.voice.is_paused():
+        elif (not ctx.voice_state.is_playing) and not ctx.voice_state.voice.is_paused():
            await ctx.send('Not playing and is paused?') 
 
         elif ctx.voice_state.is_playing and not ctx.voice_state.voice.is_paused():
@@ -504,6 +508,7 @@ class Music(commands.Cog):
         if ctx.voice_state.is_playing:
             ctx.voice_state.voice.stop()
             ctx.voice_state.songs.clear()
+            #ctx.voice_state.current = None
             #await ctx.message.add_reaction('⏹')
             await ctx.send('Stopping')
 
@@ -618,6 +623,7 @@ class Music(commands.Cog):
 
         if not ctx.voice_state.voice:
             #await ctx.invoke(self._join)
+            
             destination = ctx.author.voice.channel
             ctx.voice_state.voice = await destination.connect()
             #await ctx.send('Joining {} '.format(ctx.author.mention))        
@@ -712,7 +718,7 @@ class Music(commands.Cog):
     @commands.hybrid_command(name='forcerestart')
     #@commands.is_owner()
     async def shutdown(self, ctx: commands.Context):
-        ctx.send('restarting')
+        await ctx.send('restarting')
         """forces bot to restart"""
         await ctx.bot.close()
 
