@@ -1,5 +1,4 @@
 from cProfile import label
-import ctypes
 from re import search
 import discord
 import asyncio
@@ -8,26 +7,22 @@ import itertools
 import math
 import random
 import os
-#from keep_alive import keep_alive
+from keep_alive import keep_alive
 import youtube_dl
 from async_timeout import timeout
 from discord.ext import commands
 from dotenv import load_dotenv
-from discord import Guild, app_commands
-from discord.ui import Button, View 
-import ctypes
+from discord import app_commands
+from discord.ui import Button, View
 load_dotenv()
 
 
 
-## Silence useless bug reports messages
-#youtube_dl.utils.bug_reports_message = lambda: ''
-
-nomention = discord.AllowedMentions.none()
-
-
-
-bot = commands.Bot(command_prefix=commands.when_mentioned_or(os.environ['COMMAND_PREFIX'],"/"),intents = discord.Intents().all(), description='Much better than fredboat', allowed_mentions=discord.AllowedMentions(roles=False, users=False, everyone=False))
+# Silence useless bug reports messages
+youtube_dl.utils.bug_reports_message = lambda: ''
+intents = discord.Intents().all()
+#MY_GUILD = discord.Object(id=373491685331828756)
+bot = commands.Bot(command_prefix=commands.when_mentioned_or(os.environ['COMMAND_PREFIX'],"/"),intents = intents, description='Much better than fredboat')
 
 class VoiceError(Exception):
     pass
@@ -228,7 +223,7 @@ class VoiceState(discord.VoiceState):
         self.songs = SongQueue()
 
         self._loop = False
-        self._volume = 0.1
+        self._volume = 0.5
         self.skip_votes = set()
 
         self.audio_player = bot.loop.create_task(self.audio_player_task())
@@ -266,13 +261,10 @@ class VoiceState(discord.VoiceState):
                 # the player will disconnect due to performance
                 # reasons.
                 try:
-                    async with timeout(5):  # 1 day
+                    async with timeout(86400):  # 1 day
                         self.current = await self.songs.get()
-
                 except asyncio.TimeoutError:
-                    self.bot.loop.create_task(self.close())
-                    #print('timedout from {}'.format(self.Guild.name))
-                    #self.bot.loop.create_task(self.)
+                    self.bot.loop.create_task(self.stop())
                     return
 
             self.current.source.volume = self._volume
@@ -296,14 +288,10 @@ class VoiceState(discord.VoiceState):
 
     async def stop(self):
         self.songs.clear()
-        
+
         if self.voice:
             await self.voice.disconnect()
-            #self.current = None
-            
             self.voice = None
-            await self.del()
-            
 
 class MyView(View):
     def __init__(self,ctx):
@@ -324,7 +312,7 @@ class MyView(View):
             button.label = 'Resume'
             interaction.guild.voice_client.pause()
             await interaction.response.edit_message(content = f'{interaction.user.mention} Paused',view = self)
-            await asyncio.sleep(15)
+            asyncio.sleep(15)
             await interaction.response.edit_message(content = f'Music player controls',view = self)            
             return
 
@@ -333,11 +321,11 @@ class MyView(View):
             button.label = 'Pause'
             interaction.guild.voice_client.resume()
             await interaction.response.edit_message(content = f'{interaction.user.mention} Resumed',view = self)
-            await asyncio.sleep(15)
+            asyncio.sleep(15)
             await interaction.response.edit_message(content = f'Music player controls',view = self)
             return
         else:
-            await interaction.response.edit_message(content = f'{interaction.user.mention} not playing music',view = self)
+            interaction.response.edit_message(content = f'{interaction.user.mention} not playing music',view = self)
 
 
     # @discord.ui.button(label = 'Resume', style = discord.ButtonStyle.green)
@@ -414,7 +402,7 @@ class Music(commands.Cog):
         ctx.voice_state.voice = await destination.connect()
         await ctx.send('Joining {}'.format(destination))
 
-    @commands.hybrid_command(name='leave', aliases=['l'])
+    @commands.hybrid_command(name='leave', aliases=['getout','l','fuckoff'])
     #@commands.has_permissions(manage_guild=True)
     async def _leave(self, ctx: commands.Context):
         """Clears the queue and leaves the voice channel."""
@@ -440,16 +428,14 @@ class Music(commands.Cog):
         if 0 > volume > 100:
             return await ctx.send('Volume must be between 0 and 100')
 
-        ctx.voice_state._volume = volume / 100
+        ctx.voice_state.volume = volume / 100
         await ctx.send('Volume of the player set to {}%'.format(volume))
 
     @commands.hybrid_command(name='now', aliases=['current', 'playing'])
     async def _now(self, ctx: commands.Context):
         """Displays the currently playing song."""
-        if ctx.voice_state.current == None:
-            await ctx.send('Not playing right now')
-        else:
-            await ctx.send(embed=ctx.voice_state.current.create_embed())
+        
+        await ctx.send(embed=ctx.voice_state.current.create_embed())
 
     @commands.hybrid_command(name='sync')
     #@commands.has_permissions(manage_guild=True)
@@ -472,12 +458,6 @@ class Music(commands.Cog):
             #await ctx.message.add_reaction('⏯')
             await ctx.send('Pausing')
 
-        elif (not ctx.voice_state.is_playing) and ctx.voice_state.voice.is_paused():
-           await ctx.send('Not playing and is paused?') 
-
-        elif ctx.voice_state.is_playing and not ctx.voice_state.voice.is_paused():
-           await ctx.send('Already paused')        
-
     @commands.hybrid_command(name='resume')
     #@commands.has_permissions(manage_guild=True)
     async def _resume(self, ctx: commands.Context):
@@ -487,12 +467,6 @@ class Music(commands.Cog):
             ctx.voice_state.voice.resume()
             #await ctx.message.add_reaction('⏯')
             await ctx.send('Resuming')
-        
-        elif (not ctx.voice_state.is_playing) and ctx.voice_state.voice.is_paused():
-           await ctx.send('Not playing and is paused?') 
-
-        elif ctx.voice_state.is_playing and not ctx.voice_state.voice.is_paused():
-           await ctx.send('Already playing')         
 
     @commands.hybrid_command(name='stop')
     #@commands.has_permissions(manage_guild=True)
@@ -503,7 +477,6 @@ class Music(commands.Cog):
 
         if ctx.voice_state.is_playing:
             ctx.voice_state.voice.stop()
-            ctx.voice_state.songs.clear()
             #await ctx.message.add_reaction('⏹')
             await ctx.send('Stopping')
 
@@ -647,11 +620,11 @@ class Music(commands.Cog):
     @commands.hybrid_command(name='fix')
     #@commands.has_permissions(manage_guild=True)
     async def fix(self, ctx: commands.Context):
-        """Tries to fix the bot if broken, IF THIS DOESN'T WORK, use forcerestart"""
+        """Tries to fix the bot if broken"""
         try:
 
-            #ctx.voice_state.voice.pause()
-            #ctx.voice_state.skip()
+            ctx.voice_state.voice.pause()
+            ctx.voice_state.skip()
             ctx.voice_state.songs.clear()
             await ctx.voice_state.stop()
             del self.voice_states[ctx.guild.id]
@@ -659,65 +632,13 @@ class Music(commands.Cog):
 
         except:
             await ctx.send('fixing')
-    
-    @commands.hybrid_command(name='servercount')
-    #@commands.has_permissions(manage_guild=True)
-    async def servercount(self, ctx: commands.Context):
-        """Tells how many servers the bot is in"""      
-        await ctx.send('I am serving {} humans and {} bots across {} servers'.format(sum(not m.bot for m in bot.get_all_members()),sum(m.bot for m in bot.get_all_members()),len(self.bot.guilds)))
+
 
     
     # @commands.hybrid_command(name='log')
     # async def log(self, ctx: commands.Context):
     #     logchannel = discord.utils.get(ctx.guild.text_channels, name="logs")
     #     await logchannel.send('Joined')
-
-    @commands.hybrid_command(name='makelogs')
-    async def create_channel(self, ctx: commands.Context):
-        """Creates a logs text channel to send logging info"""
-        if not discord.utils.get(ctx.guild.text_channels, name='logs'):
-            channel = await ctx.guild.create_text_channel('logs')
-        else:
-            await ctx.send('logs already exists')
-
-    @commands.hybrid_command(name='opusloaded')
-    @commands.is_owner()
-    async def opus_loaded(self, ctx: commands.Context):
-        """check if opus is loaded"""
-        await ctx.send(discord.opus.is_loaded())
-
-    @commands.hybrid_command(name='listservers')
-    @commands.is_owner()
-    async def list_servers(self, ctx: commands.Context):
-        """lists servers bot is in"""
-        
-        for server in self.bot.guilds:
-            await ctx.send('server name: {}, server id: {}, owner: {}, owner id: {},member count: {}'.format(server.name, server.id, server.owner,server.owner_id,server.member_count,))
-            # for member in server.members:
-            #      await ctx.send('   member name:{}, memberid:{}'.format(member.name,member.id))
-
-    @commands.hybrid_command(name='listmembers')
-    @commands.is_owner()
-    @app_commands.describe(serverid = 'server id of server to list members')
-    async def list_members(self, ctx: commands.Context, serverid: int):
-        """lists members of server id"""
-        
-        for server in self.bot.guilds:
-            if server.id == serverid:
-                #await ctx.send('server name: {}, server id: {}, owner: {}, owner id: {},member count: {}'.format(server.name, server.id, server.owner,server.owner_id,server.member_count,))
-                for member in server.members:
-                    await ctx.send('member name:{}, memberid:{}'.format(member.name,member.id))
-                break
-
-    @commands.hybrid_command(name='forcerestart')
-    #@commands.is_owner()
-    async def shutdown(self, ctx: commands.Context):
-        ctx.send('restarting')
-        """forces bot to restart"""
-        await ctx.bot.close()
-
-
-    
 
 
 
@@ -748,7 +669,7 @@ async def show_join_date(interaction: discord.Interaction, member: discord.Membe
 
 @bot.event
 async def on_voice_state_update(member,before,after):
-    #print("{member},Joined")
+    print("{member},Joined")
     logchannel = discord.utils.get(member.guild.text_channels, name="logs")
     if not before.channel and after.channel:
         await logchannel.send(f"""{member.mention}Joined {after.channel}""")
@@ -756,14 +677,14 @@ async def on_voice_state_update(member,before,after):
     elif not after.channel and before.channel:
         await logchannel.send(f"""{member.mention}Left {before.channel}""")
 
-    elif after.channel and before.channel and (after.channel != before.channel):
+    elif after.channel and before.channel  and (after.channel != before.channel):
         await logchannel.send(f"""{member.mention}Left {before.channel} and joined {after.channel}""")
 
 
 
 @bot.event  
 async def on_ready():
-    print('Logged in as:\nBOT:{0.user.name}\nUSER:{0.user.id}'.format(bot)) 
+    print('Logged in as:\nBOT:{0.user.name}\nUSER:{0.user.id}'.format(bot))
     print(f"Discord API version: {discord.__version__}")
     print('Command Prefix:',os.environ['COMMAND_PREFIX'])
     await bot.change_presence(activity=discord.Game('with ass'))
