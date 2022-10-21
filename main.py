@@ -718,9 +718,18 @@ class Music(commands.Cog):
     @commands.hybrid_command(name='forcerestart')
     #@commands.is_owner()
     async def shutdown(self, ctx: commands.Context):
-        await ctx.send('restarting')
+        
         """forces bot to restart"""
+        await ctx.send('restarting')
         await ctx.bot.close()
+
+    @commands.hybrid_command(name='roles')
+    #@commands.is_owner()
+    async def roles(self, ctx: commands.Context):
+
+        """see roles"""
+        for role in ctx.guild.roles:
+            await ctx.send('role name:{},permissions:{}'.format(role.name,role.permissions))
 
 
     
