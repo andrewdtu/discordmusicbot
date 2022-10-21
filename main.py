@@ -1,5 +1,7 @@
 from cProfile import label
 import ctypes
+from http import client
+from pickle import TRUE
 from re import search
 import discord
 import asyncio
@@ -13,7 +15,7 @@ import youtube_dl
 from async_timeout import timeout
 from discord.ext import commands
 from dotenv import load_dotenv
-from discord import Guild, app_commands
+from discord import Guild, User, app_commands
 from discord.utils import get
 from discord.ui import Button, View 
 import ctypes
@@ -736,11 +738,24 @@ class Music(commands.Cog):
     @commands.hybrid_command(name='giverole')
     @commands.is_owner()
     async def giverole(self, ctx: commands.Context, role: str):
-
         """give role"""
         role_v = get(ctx.guild.roles, name=role)
-        await ctx.message.author.add_roles(role_v)
+        await user.add_roles(role_v)
         ctx.send('ok')
+
+
+    @commands.hybrid_command(name='giveactivity')
+    #@commands.is_owner()
+    async def giveactivity(self, ctx: commands.Context, role: str):
+        """give role"""
+        # role_v = get(ctx.guild.roles, name=role)
+        # await ctx.author.add_roles(role_v)
+        # ctx.send('ok')
+        newperms = discord.Permissions()
+        newperms.update(use_embedded_activities = True) 
+        role_v = discord.utils.get(ctx.guild.roles, name=role)
+        await role_v.edit(permissions = newperms)
+        await ctx.send('ok')
 
 
     
