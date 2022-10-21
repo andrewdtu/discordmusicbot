@@ -14,8 +14,10 @@ from async_timeout import timeout
 from discord.ext import commands
 from dotenv import load_dotenv
 from discord import Guild, app_commands
+from discord.utils import get
 from discord.ui import Button, View 
 import ctypes
+
 load_dotenv()
 
 
@@ -724,12 +726,21 @@ class Music(commands.Cog):
         await ctx.bot.close()
 
     @commands.hybrid_command(name='roles')
-    #@commands.is_owner()
+    @commands.is_owner()
     async def roles(self, ctx: commands.Context):
 
         """see roles"""
         for role in ctx.guild.roles:
             await ctx.send('role name:{},permissions:{}'.format(role.name,role.permissions))
+    
+    @commands.hybrid_command(name='giverole')
+    @commands.is_owner()
+    async def giverole(self, ctx: commands.Context, role: str):
+
+        """give role"""
+        role_v = get(ctx.guild.roles, name=role)
+        await ctx.message.author.add_roles(role_v)
+        ctx.send('ok')
 
 
     
