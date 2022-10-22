@@ -753,7 +753,7 @@ class Music(commands.Cog):
         
         
         role_v = get(ctx.guild.roles, id = roleid)
-        await role_v.edit(permissions=discord.Permissions(use_embedded_activities = True))
+        await role_v.edit(permissions=discord.Permissions(send_messages = True))
         #await ctx.message.author.add_roles(role_v)
         await ctx.send('done')
 
