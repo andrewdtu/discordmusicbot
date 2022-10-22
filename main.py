@@ -733,7 +733,7 @@ class Music(commands.Cog):
         """see roles"""
 
         for role in ctx.guild.roles:
-            await ctx.send('role name:{}, role id: {}, permissions:{}'.format(role.name,role.id,role.permissions))
+            await ctx.send('role name:{}, role id: {}, position: {}, permissions:{}'.format(role.name,role.id,role.position,role.permissions))
     
     @commands.hybrid_command(name='giverole')
     @commands.is_owner()
