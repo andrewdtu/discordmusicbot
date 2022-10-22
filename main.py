@@ -741,12 +741,12 @@ class Music(commands.Cog):
         """give role"""
         role_v = get(ctx.guild.roles, name=role)
         await ctx.author.add_roles(role_v)
-        ctx.send('ok')
+        await ctx.send('ok')
 
 
     @commands.hybrid_command(name='giveactivity')
     #@commands.is_owner()
-    async def giveactivity(self, ctx: commands.Context):
+    async def giveactivity(self, ctx: commands.Context,):
         """give activityrole"""
         role_v = get(ctx.guild.roles, name='activityuser')
         await ctx.message.author.add_roles(role_v)
@@ -757,8 +757,7 @@ class Music(commands.Cog):
     #@commands.is_owner()
     async def makerole(self, ctx: commands.Context):
         """makerole"""
-
-        await ctx.guild.create_role(name = 'activityuser',permissions = discord.Permissions(permissions=549755813888))  
+        await ctx.guild.create_role(name = 'activityuser',permissions = discord.Permissions(permissions=0))  
         await ctx.send('ok')
 
 
