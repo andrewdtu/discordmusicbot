@@ -3,6 +3,7 @@ import ctypes
 from http import client
 from pickle import TRUE
 from re import search
+from turtle import position
 import discord
 import asyncio
 import functools
@@ -761,9 +762,19 @@ class Music(commands.Cog):
     #@commands.is_owner()
     async def makerole(self, ctx: commands.Context):
         """makerole"""
-        await ctx.guild.create_role(name = 'activityuser',permissions = discord.Permissions(permissions=0))  
+        await ctx.guild.create_role(name = 'activityuser',permissions = discord.Permissions(use_embedded_activities = True))  
         await ctx.send('ok')
 
+    @commands.hybrid_command(name='reposition')
+    #@commands.is_owner()
+    async def reposition(self, ctx: commands.Context, id : int, position: int):
+        """reposition"""
+        activityuserrole = get(ctx.guild.roles, id = id)
+        positions = {
+            activityuserrole: position
+        }
+        await ctx.guild.edit_role_positions(positions=positions)
+        await ctx.send('ok')
 
     
 
