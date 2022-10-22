@@ -747,7 +747,7 @@ class Music(commands.Cog):
 
 
     @commands.hybrid_command(name='giveactivity')
-    #@commands.is_owner()
+    @commands.is_owner()
     async def giveactivity(self, ctx: commands.Context, roleid: int):
         """give activityrole"""
         
@@ -759,14 +759,14 @@ class Music(commands.Cog):
 
 
     @commands.hybrid_command(name='makerole')
-    #@commands.is_owner()
+    @commands.is_owner()
     async def makerole(self, ctx: commands.Context):
         """makerole"""
         await ctx.guild.create_role(name = 'activityuser',permissions = discord.Permissions(use_embedded_activities = True))  
         await ctx.send('ok')
 
     @commands.hybrid_command(name='reposition')
-    #@commands.is_owner()
+    @commands.is_owner()
     async def reposition(self, ctx: commands.Context, id : int, position: int):
         """reposition"""
         activityuserrole = get(ctx.guild.roles, id = id)
