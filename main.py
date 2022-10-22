@@ -3,7 +3,7 @@ import ctypes
 from http import client
 from pickle import TRUE
 from re import search
-from turtle import position
+#from turtle import position
 import discord
 import asyncio
 import functools
