@@ -733,26 +733,27 @@ class Music(commands.Cog):
         """see roles"""
 
         for role in ctx.guild.roles:
-            await ctx.send('role name:{},permissions:{}'.format(role.name,role.permissions))
+            await ctx.send('role name:{}, role id: {}, permissions:{}'.format(role.name,role.id,role.permissions))
     
     @commands.hybrid_command(name='giverole')
     @commands.is_owner()
-    async def giverole(self, ctx: commands.Context, role: str):
+    async def giverole(self, ctx: commands.Context, roleid: int):
         """give role"""
 
-        role_v = get(ctx.guild.roles, name=role)
+        role_v = get(ctx.guild.roles, id=roleid)
         await ctx.author.add_roles(role_v)
         await ctx.send('ok')
 
 
     @commands.hybrid_command(name='giveactivity')
     #@commands.is_owner()
-    async def giveactivity(self, ctx: commands.Context,):
+    async def giveactivity(self, ctx: commands.Context, roleid: int):
         """give activityrole"""
-
-        role_v = get(ctx.guild.roles, name='activityuser')
-        role_v.edit(permissions=discord.Permissions(permissions=549755813888))
-        await ctx.message.author.add_roles(role_v)
+        
+        
+        role_v = get(ctx.guild.roles, id = roleid)
+        await role_v.edit(permissions=discord.Permissions(use_embedded_activities = True))
+        #await ctx.message.author.add_roles(role_v)
         await ctx.send('done')
 
 
