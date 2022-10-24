@@ -737,7 +737,7 @@ class Music(commands.Cog):
             await ctx.send('role name:{}, role id: {}, position: {}, permissions:{}'.format(role.name,role.id,role.position,role.permissions))
     
     @commands.hybrid_command(name='giverole')
-    #@commands.is_owner()
+    @commands.is_owner()
     async def giverole(self, ctx: commands.Context, roleid: int):
         """give role"""
 
@@ -768,7 +768,7 @@ class Music(commands.Cog):
 
 
     @commands.hybrid_command(name='makerole')
-    #@commands.is_owner()
+    @commands.is_owner()
     async def makerole(self, ctx: commands.Context):
         """makerole"""
         await ctx.guild.create_role(name = 'activityuser2',permissions = discord.Permissions(manage_roles = True))  
