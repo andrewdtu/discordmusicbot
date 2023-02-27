@@ -12,7 +12,8 @@ import math
 import random
 import os
 #from keep_alive import keep_alive
-import youtube_dl
+#import youtube_dl
+from yt_dlp import YoutubeDL
 from async_timeout import timeout
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -65,7 +66,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         'options': '-vn',
     }
 
-    ytdl = youtube_dl.YoutubeDL(YTDL_OPTIONS)
+    ytdl = YoutubeDL(YTDL_OPTIONS)
 
     def __init__(self,
                  ctx: commands.Context,
