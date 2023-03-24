@@ -698,6 +698,17 @@ class Music(commands.Cog):
         """check if opus is loaded"""
         await ctx.send(discord.opus.is_loaded())
 
+    @commands.hybrid_command(name='loadopus')
+    @commands.is_owner()
+    async def loadopus(self, ctx: commands.Context):
+        """check if opus is loaded"""
+        find_opus = ctypes.util.find_library('opus')
+        await ctx.send('opus: {}'.format(find_opus))
+
+        await ctx.send(discord.opus.load_opus(find_opus))
+        await ctx.send(discord.opus.is_loaded())
+        
+
     @commands.hybrid_command(name='listservers')
     @commands.is_owner()
     async def list_servers(self, ctx: commands.Context):
