@@ -705,7 +705,7 @@ class Music(commands.Cog):
         find_opus = ctypes.util.find_library('opus')
         await ctx.send('opus: {}'.format(find_opus))
 
-        await ctx.send(discord.opus.load_opus(find_opus))
+        await discord.opus.load_opus(find_opus)
         await ctx.send(discord.opus.is_loaded())
         
 
