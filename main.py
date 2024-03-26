@@ -846,7 +846,7 @@ async def on_ready():
     print('Logged in as:\nBOT:{0.user.name}\nUSER:{0.user.id}'.format(bot)) 
     print(f"Discord API version: {discord.__version__}")
     print('Command Prefix:',os.environ['COMMAND_PREFIX'])
-    await bot.change_presence(activity=discord.Game('with ass'))
+    await bot.change_presence(activity=discord.Game('music'))
     #print(await bot.tree.fetch_commands())
 
 
