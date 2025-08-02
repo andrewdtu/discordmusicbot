@@ -11,6 +11,7 @@ import itertools
 import math
 import random
 import os
+import logging
 #from keep_alive import keep_alive
 #import youtube_dl
 from yt_dlp import YoutubeDL
@@ -24,7 +25,16 @@ import ctypes
 
 load_dotenv()
 
-
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('bot.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger('MusicBot')
 
 ## Silence useless bug reports messages
 #youtube_dl.utils.bug_reports_message = lambda: ''
@@ -263,8 +273,10 @@ class VoiceState(discord.VoiceState):
         return self.voice and self.current
 
     async def audio_player_task(self):
+        logger.info(f'Audio player task started for guild {self._ctx.guild.name}')
         while True:
             self.next.clear()
+            logger.debug(f'Audio player loop iteration for guild {self._ctx.guild.name}')
 
             if not self.loop:
                 # Try to get the next song within a day.
@@ -272,24 +284,33 @@ class VoiceState(discord.VoiceState):
                 # the player will disconnect due to performance
                 # reasons.
                 try:
+                    logger.info(f'Waiting for next song in queue for guild {self._ctx.guild.name}')
                     async with timeout(129600):  # 1 day
                         self.current = await self.songs.get()
+                        logger.info(f'Got song from queue: {self.current.source.title}')
 
                 except asyncio.TimeoutError:
-                    await self.bot.close()
-                    
-                    #self.bot.loop.create_task(self.stop())
-                    
-                    
-                    
+                    logger.warning(f'Audio player timeout - no songs for 36 hours in guild {self._ctx.guild.name}')
+                    await self.stop()
                     return
 
+            # Check if we have a voice connection, if not try to get it from the guild
+            if not self.voice:
+                self.voice = self._ctx.guild.voice_client
+                if not self.voice:
+                    logger.error(f'No voice connection available in guild {self._ctx.guild.name}')
+                    return
+                else:
+                    logger.info(f'Retrieved voice connection from guild {self._ctx.guild.name}')
+
             self.current.source.volume = self._volume
+            logger.info(f'Playing: {self.current.source.title} in guild {self._ctx.guild.name}')
             self.voice.play(self.current.source, after=self.play_next_song)
             await self.current.source.channel.send(
                 embed=self.current.create_embed())
 
             await self.next.wait()
+            logger.debug(f'Song finished playing in guild {self._ctx.guild.name}')
 
     def play_next_song(self, error=None):
         if error:
@@ -304,11 +325,14 @@ class VoiceState(discord.VoiceState):
             self.voice.stop()
 
     async def stop(self):
+        logger.info(f'Stopping voice state for guild {self._ctx.guild.name}')
         self.songs.clear()
         
         if self.voice:
+            logger.info(f'Disconnecting from voice channel {self.voice.channel.name}')
             await self.voice.disconnect()
             self.voice = None
+            logger.info('Voice disconnection complete')
             
             
             
@@ -392,20 +416,41 @@ class Music(commands.Cog):
 
     async def cog_command_error(self, ctx: commands.Context,
                                 error: commands.CommandError):
-        await ctx.send('An error occurred: {}'.format(str(error)))
+        try:
+            if ctx.interaction and not ctx.interaction.response.is_done():
+                await ctx.send('An error occurred: {}'.format(str(error)))
+            elif not ctx.interaction:
+                await ctx.send('An error occurred: {}'.format(str(error)))
+        except discord.errors.NotFound:
+            pass
 
     @commands.hybrid_command(name='come')
     async def _join(self, ctx: commands.Context):
         """Joins your voice channel."""
+        logger.info(f'Join command called by {ctx.author} in guild {ctx.guild.name}')
+        
+        if not ctx.author.voice or not ctx.author.voice.channel:
+            logger.warning(f'User {ctx.author} not in voice channel')
+            await ctx.send('You are not connected to a voice channel.')
+            return
 
         destination = ctx.author.voice.channel
+        logger.info(f'Target voice channel: {destination.name}')
+        
         if ctx.voice_state.voice:
+            logger.info(f'Moving from {ctx.voice_state.voice.channel} to {destination}')
             await ctx.voice_state.voice.move_to(destination)
             await ctx.send('Joining {} '.format(ctx.author.mention))
             return
 
-        ctx.voice_state.voice = await destination.connect()
-        await ctx.send('Joining {} '.format(ctx.author.mention))
+        try:
+            logger.info(f'Connecting to voice channel {destination.name}')
+            ctx.voice_state.voice = await destination.connect(reconnect=False)
+            logger.info(f'Successfully connected to {destination.name}')
+            await ctx.send('Joining {} '.format(ctx.author.mention))
+        except Exception as e:
+            logger.error(f'Failed to connect in come command: {e}')
+            await ctx.send(f'Failed to connect to voice channel: {e}')
 
     @commands.hybrid_command(name='goto',aliases=['summon'])
     #@commands.has_permissions(manage_guild=True)
@@ -428,12 +473,15 @@ class Music(commands.Cog):
     #@commands.has_permissions(manage_guild=True)
     async def _leave(self, ctx: commands.Context):
         """Clears the queue and leaves the voice channel."""
+        logger.info(f'Leave command called by {ctx.author} in guild {ctx.guild.name}')
 
         if not ctx.voice_state.voice:
+            logger.warning(f'Leave command called but not connected to voice in {ctx.guild.name}')
             return await ctx.send('Not connected to any voice channel.')
 
         await ctx.voice_state.stop()
         del self.voice_states[ctx.guild.id]
+        logger.info(f'Voice state cleaned up for guild {ctx.guild.name}')
         await ctx.send('OK bye')
 
     @commands.hybrid_command(name='volume')
@@ -626,28 +674,43 @@ class Music(commands.Cog):
         This command automatically searches from various sites if no URL is provided.
         A list of these sites can be found here: https://rg3.github.io/youtube-dl/supportedsites.html
         """
+        logger.info(f'Play command called by {ctx.author} in guild {ctx.guild.name} with search: {search}')
+        
+        if not ctx.author.voice or not ctx.author.voice.channel:
+            logger.warning(f'User {ctx.author} not in voice channel when using play command')
+            await ctx.send('You are not connected to a voice channel.')
+            return
 
-        if not ctx.voice_state.voice:
-            #await ctx.invoke(self._join)
-            
-            destination = ctx.author.voice.channel
-            ctx.voice_state.voice = await destination.connect()
-            #await ctx.send('Joining {} '.format(ctx.author.mention))        
+        # Check if we already have a guild voice connection
+        if ctx.guild.voice_client and ctx.guild.voice_client.is_connected():
+            logger.info('Using existing guild voice connection')
+            ctx.voice_state.voice = ctx.guild.voice_client
+        elif not ctx.voice_state.voice:
+            await ctx.send('Please use the `;come` command first to join a voice channel.')
+            return
 
         async with ctx.typing():
             try:
+                logger.info(f'Creating YTDL source for: {search}')
                 source = await YTDLSource.create_source(ctx,
                                                         search,
                                                         loop=self.bot.loop)
+                logger.info(f'Successfully created source: {source.title}')
             except YTDLError as e:
+                logger.error(f'YTDL error for search "{search}": {e}')
                 await ctx.send(
                     'An error occurred while processing this request: {}'.
                     format(str(e)))
-            else:
-                song = Song(source)
-
-                await ctx.voice_state.songs.put(song)
-                await ctx.send('{} Enqueued {}'.format(ctx.author.mention,str(source)))
+                return
+            except Exception as e:
+                logger.error(f'Unexpected error during YTDL for search "{search}": {e}')
+                await ctx.send(f'Unexpected error: {e}')
+                return
+                
+            song = Song(source)
+            await ctx.voice_state.songs.put(song)
+            logger.info(f'Enqueued song: {source.title} in guild {ctx.guild.name}')
+            await ctx.send('{} Enqueued {}'.format(ctx.author.mention,str(source)))
 
     @commands.hybrid_command(name='player',aliases=['gui','buttons'])
     
@@ -846,6 +909,37 @@ async def on_ready():
     print('Logged in as:\nBOT:{0.user.name}\nUSER:{0.user.id}'.format(bot)) 
     print(f"Discord API version: {discord.__version__}")
     print('Command Prefix:',os.environ['COMMAND_PREFIX'])
+    
+    # Check opus library
+    if not discord.opus.is_loaded():
+        logger.warning('Opus library not loaded, attempting to load...')
+        
+        # Try different opus library names
+        opus_names = [
+            '/usr/lib/x86_64-linux-gnu/libopus.so.0',
+            '/usr/lib/x86_64-linux-gnu/libopus.so',
+            'libopus.so.0', 
+            'libopus.so', 
+            'libopus', 
+            'opus'
+        ]
+        
+        for opus_name in opus_names:
+            try:
+                discord.opus.load_opus(opus_name)
+                if discord.opus.is_loaded():
+                    logger.info(f'Opus library loaded successfully using: {opus_name}')
+                    break
+            except Exception as e:
+                logger.debug(f'Failed to load opus as {opus_name}: {e}')
+                continue
+        
+        if not discord.opus.is_loaded():
+            logger.error('Failed to load opus library with all attempted names')
+            logger.error('Voice functionality may not work properly')
+    else:
+        logger.info('Opus library already loaded')
+    
     await bot.change_presence(activity=discord.Game('music'))
     #print(await bot.tree.fetch_commands())
 
