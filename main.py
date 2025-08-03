@@ -681,13 +681,10 @@ class Music(commands.Cog):
             await ctx.send('You are not connected to a voice channel.')
             return
 
-        # Check if we already have a guild voice connection
-        if ctx.guild.voice_client and ctx.guild.voice_client.is_connected():
-            logger.info('Using existing guild voice connection')
-            ctx.voice_state.voice = ctx.guild.voice_client
-        elif not ctx.voice_state.voice:
-            await ctx.send('Please use the `;come` command first to join a voice channel.')
-            return
+        if not ctx.voice_state.voice:
+            destination = ctx.author.voice.channel
+            ctx.voice_state.voice = await destination.connect()
+            await ctx.send('Joining {} '.format(ctx.author.mention))
 
         async with ctx.typing():
             try:
