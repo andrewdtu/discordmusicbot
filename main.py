@@ -22,6 +22,8 @@ from discord import Guild, User, app_commands
 from discord.utils import get
 from discord.ui import Button, View 
 import ctypes
+import subprocess
+import sys
 
 load_dotenv()
 
@@ -35,9 +37,20 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger('MusicBot')
-
 ## Silence useless bug reports messages
 #youtube_dl.utils.bug_reports_message = lambda: ''
+
+
+def update_yt_dlp():
+    try:
+        subprocess.check_call([
+            sys.executable, "-m", "pip", "install", "-U", "--pre", "yt-dlp[default]"
+        ])
+        print("yt-dlp updated successfully")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to update yt-dlp: {e}")
+        # Decide whether to continue or exit based on your needs
+
 
 nomention = discord.AllowedMentions.none()
 
@@ -942,6 +955,7 @@ async def on_ready():
 
 
 async def main():
+    update_yt_dlp()
     async with bot:
         
         await bot.add_cog(Music(bot))
