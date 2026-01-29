@@ -15,7 +15,6 @@ import logging
 #from keep_alive import keep_alive
 #import youtube_dl
 from yt_dlp import YoutubeDL
-from yt_dlp.networking.impersonate import ImpersonateTarget
 from async_timeout import timeout
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -88,16 +87,20 @@ class YTDLSource(discord.PCMVolumeTransformer):
         'no_warnings': True,
         'default_search': 'auto',
         'source_address': '0.0.0.0',
-        'impersonate': 'firefox',
         'keepvideo': False,
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
             'preferredquality': '192',
         }],
+        # Use iOS client to avoid 403 errors
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['ios', 'android', 'web'],
+                'player_skip': ['webpage', 'configs'],
+            }
+        },
     }
-
-    YTDL_OPTIONS["impersonate"] = ImpersonateTarget.from_str(YTDL_OPTIONS["impersonate"].lower())
 
     FFMPEG_OPTIONS = {
         'options': '-vn',
@@ -933,8 +936,11 @@ async def on_ready():
     print(f"Discord API version: {discord.__version__}")
     print('Command Prefix:',os.environ['COMMAND_PREFIX'])
 
-    # Log impersonate configuration
-    logger.info(f'YTDL impersonate setting: {YTDLSource.YTDL_OPTIONS.get("impersonate", "disabled")}')
+    # Log YouTube client configuration
+    extractor_args = YTDLSource.YTDL_OPTIONS.get('extractor_args', {})
+    youtube_args = extractor_args.get('youtube', {})
+    player_clients = youtube_args.get('player_client', ['default'])
+    logger.info(f'YTDL using YouTube player clients: {player_clients}')
 
     # Check opus library
     if not discord.opus.is_loaded():
