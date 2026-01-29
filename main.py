@@ -41,6 +41,11 @@ logger = logging.getLogger('MusicBot')
 ## Silence useless bug reports messages
 #youtube_dl.utils.bug_reports_message = lambda: ''
 
+# Create downloads directory if it doesn't exist
+DOWNLOADS_DIR = 'downloads'
+os.makedirs(DOWNLOADS_DIR, exist_ok=True)
+logger.info(f'Downloads directory: {os.path.abspath(DOWNLOADS_DIR)}')
+
 
 def update_yt_dlp():
     try:
@@ -138,66 +143,51 @@ class YTDLSource(discord.PCMVolumeTransformer):
                             loop: asyncio.BaseEventLoop = None):
         loop = loop or asyncio.get_event_loop()
 
+        logger.info(f'Starting download for: {search}')
+
+        # Download the file instead of streaming
         partial = functools.partial(cls.ytdl.extract_info,
                                     search,
-                                    download=False,
-                                    process=False)
+                                    download=True)
         data = await loop.run_in_executor(None, partial)
 
         if data is None:
             raise YTDLError(
                 'Couldn\'t find anything that matches `{}`'.format(search))
 
-        if 'entries' not in data:
-            process_info = data
+        if 'entries' in data:
+            # Take first item from a playlist
+            info = data['entries'][0]
+            logger.debug(f'Got playlist entry: {info.get("title", "unknown")}')
         else:
-            process_info = None
-            for entry in data['entries']:
-                if entry:
-                    process_info = entry
-                    break
+            info = data
 
-            if process_info is None:
-                raise YTDLError(
-                    'Couldn\'t find anything that matches `{}`'.format(search))
+        # Get the downloaded filename
+        filename = cls.ytdl.prepare_filename(info)
+        logger.debug(f'prepare_filename returned: {filename}')
 
-        webpage_url = process_info['webpage_url']
-        partial = functools.partial(cls.ytdl.extract_info,
-                                    webpage_url,
-                                    download=False)
-        processed_info = await loop.run_in_executor(None, partial)
+        # If postprocessor changed the extension to mp3, update filename
+        if 'requested_downloads' in info and info['requested_downloads']:
+            filename = info['requested_downloads'][0]['filepath']
+            logger.debug(f'Using requested_downloads path: {filename}')
+        elif not os.path.exists(filename):
+            # Try with .mp3 extension
+            base, ext = os.path.splitext(filename)
+            mp3_filename = base + '.mp3'
+            logger.debug(f'Original file not found, trying: {mp3_filename}')
+            if os.path.exists(mp3_filename):
+                filename = mp3_filename
+                logger.debug(f'Found mp3 file: {filename}')
+            else:
+                logger.warning(f'Could not find downloaded file. Tried: {filename} and {mp3_filename}')
 
-        if processed_info is None:
-            raise YTDLError('Couldn\'t fetch `{}`'.format(webpage_url))
+        if not os.path.exists(filename):
+            raise YTDLError(f'Downloaded file not found: {filename}')
 
-        if 'entries' not in processed_info:
-            info = processed_info
-        else:
-            info = None
-            while info is None:
-                try:
-                    info = processed_info['entries'].pop(0)
-                except IndexError:
-                    raise YTDLError(
-                        'Couldn\'t retrieve any matches for `{}`'.format(
-                            webpage_url))
-
-        # Build ffmpeg options with HTTP headers to avoid 403 errors
-        ffmpeg_options = cls.FFMPEG_OPTIONS.copy()
-
-        # Extract HTTP headers from yt-dlp info
-        http_headers = info.get('http_headers', {})
-        if http_headers:
-            logger.debug(f'Adding HTTP headers to ffmpeg for {info.get("title", "unknown")}: {list(http_headers.keys())}')
-            # Build header string for ffmpeg
-            header_list = [f"{k}: {v}" for k, v in http_headers.items()]
-            headers_option = ' -headers ' + repr('\r\n'.join(header_list) + '\r\n')
-            ffmpeg_options['before_options'] = ffmpeg_options.get('before_options', '') + headers_option
-        else:
-            logger.warning(f'No HTTP headers found in yt-dlp info for {info.get("title", "unknown")}, may encounter 403 errors')
+        logger.info(f'Successfully downloaded and located file: {filename} ({os.path.getsize(filename)} bytes)')
 
         return cls(ctx,
-                   discord.FFmpegPCMAudio(info['url'], **ffmpeg_options),
+                   discord.FFmpegPCMAudio(filename, **cls.FFMPEG_OPTIONS),
                    data=info)
 
     @staticmethod
