@@ -921,28 +921,8 @@ async def on_ready():
     print(f"Discord API version: {discord.__version__}")
     print('Command Prefix:',os.environ['COMMAND_PREFIX'])
 
-    # Log available impersonate targets
-    if IMPERSONATE_AVAILABLE:
-        try:
-            # Get all available targets from supported request handlers
-            available_targets = set()
-            from yt_dlp.networking._helper import get_request_handlers
-            for rh_cls in get_request_handlers():
-                if hasattr(rh_cls, 'supported_targets'):
-                    available_targets.update(rh_cls.supported_targets())
-
-            logger.info(f'Available impersonate targets: {", ".join(str(t) for t in sorted(available_targets)) if available_targets else "None"}')
-
-            # Check if our configured target is available
-            if 'impersonate' in YTDLSource.YTDL_OPTIONS:
-                target = YTDLSource.YTDL_OPTIONS['impersonate']
-                logger.info(f'Currently using impersonate target: {target}')
-            else:
-                logger.info('Impersonate not configured')
-        except Exception as e:
-            logger.warning(f'Could not retrieve impersonate targets: {e}')
-    else:
-        logger.info('Impersonate feature not available in this yt-dlp version')
+    # Log impersonate configuration
+    logger.info(f'YTDL impersonate setting: {YTDLSource.YTDL_OPTIONS.get("impersonate", "disabled")}')
 
     # Check opus library
     if not discord.opus.is_loaded():
