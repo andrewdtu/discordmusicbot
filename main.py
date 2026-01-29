@@ -915,12 +915,21 @@ async def on_voice_state_update(member,before,after):
 
 
 
-@bot.event  
+@bot.event
 async def on_ready():
-    print('Logged in as:\nBOT:{0.user.name}\nUSER:{0.user.id}'.format(bot)) 
+    print('Logged in as:\nBOT:{0.user.name}\nUSER:{0.user.id}'.format(bot))
     print(f"Discord API version: {discord.__version__}")
     print('Command Prefix:',os.environ['COMMAND_PREFIX'])
-    
+
+    # Log available impersonate targets
+    try:
+        from yt_dlp.networking import ImpersonateTarget
+        targets = ImpersonateTarget.get_available_targets()
+        logger.info(f'Available impersonate targets: {", ".join(targets) if targets else "None"}')
+        logger.info(f'Currently using impersonate target: firefox')
+    except Exception as e:
+        logger.warning(f'Could not retrieve impersonate targets: {e}')
+
     # Check opus library
     if not discord.opus.is_loaded():
         logger.warning('Opus library not loaded, attempting to load...')
