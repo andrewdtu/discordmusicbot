@@ -15,12 +15,17 @@ import logging
 #from keep_alive import keep_alive
 #import youtube_dl
 from yt_dlp import YoutubeDL
+try:
+    from yt_dlp.networking import ImpersonateTarget
+    IMPERSONATE_AVAILABLE = True
+except ImportError:
+    IMPERSONATE_AVAILABLE = False
 from async_timeout import timeout
 from discord.ext import commands
 from dotenv import load_dotenv
 from discord import Guild, User, app_commands
 from discord.utils import get
-from discord.ui import Button, View 
+from discord.ui import Button, View
 import ctypes
 import subprocess
 import sys
@@ -81,8 +86,15 @@ class YTDLSource(discord.PCMVolumeTransformer):
         'no_warnings': True,
         'default_search': 'auto',
         'source_address': '0.0.0.0',
-        'impersonate': 'firefox',
     }
+
+    # Add impersonate option if available
+    if IMPERSONATE_AVAILABLE:
+        try:
+            YTDL_OPTIONS['impersonate'] = ImpersonateTarget('firefox')
+        except Exception:
+            # If firefox target doesn't work, try without impersonation
+            pass
 
     FFMPEG_OPTIONS = {
         'before_options':
@@ -922,13 +934,27 @@ async def on_ready():
     print('Command Prefix:',os.environ['COMMAND_PREFIX'])
 
     # Log available impersonate targets
-    try:
-        from yt_dlp.networking import ImpersonateTarget
-        targets = ImpersonateTarget.get_available_targets()
-        logger.info(f'Available impersonate targets: {", ".join(targets) if targets else "None"}')
-        logger.info(f'Currently using impersonate target: firefox')
-    except Exception as e:
-        logger.warning(f'Could not retrieve impersonate targets: {e}')
+    if IMPERSONATE_AVAILABLE:
+        try:
+            # Get all available targets from supported request handlers
+            available_targets = set()
+            from yt_dlp.networking._helper import get_request_handlers
+            for rh_cls in get_request_handlers():
+                if hasattr(rh_cls, 'supported_targets'):
+                    available_targets.update(rh_cls.supported_targets())
+
+            logger.info(f'Available impersonate targets: {", ".join(str(t) for t in sorted(available_targets)) if available_targets else "None"}')
+
+            # Check if our configured target is available
+            if 'impersonate' in YTDLSource.YTDL_OPTIONS:
+                target = YTDLSource.YTDL_OPTIONS['impersonate']
+                logger.info(f'Currently using impersonate target: {target}')
+            else:
+                logger.info('Impersonate not configured')
+        except Exception as e:
+            logger.warning(f'Could not retrieve impersonate targets: {e}')
+    else:
+        logger.info('Impersonate feature not available in this yt-dlp version')
 
     # Check opus library
     if not discord.opus.is_loaded():
