@@ -15,6 +15,7 @@ import logging
 #from keep_alive import keep_alive
 #import youtube_dl
 from yt_dlp import YoutubeDL
+from yt_dlp.networking.impersonate import ImpersonateTarget
 from async_timeout import timeout
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -83,6 +84,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
         'source_address': '0.0.0.0',
         'impersonate': 'firefox',
     }
+
+    YTDL_OPTIONS["impersonate"] = ImpersonateTarget.from_str(YTDL_OPTIONS["impersonate"].lower())
 
     FFMPEG_OPTIONS = {
         'before_options':
