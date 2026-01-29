@@ -15,11 +15,6 @@ import logging
 #from keep_alive import keep_alive
 #import youtube_dl
 from yt_dlp import YoutubeDL
-try:
-    from yt_dlp.networking import ImpersonateTarget
-    IMPERSONATE_AVAILABLE = True
-except ImportError:
-    IMPERSONATE_AVAILABLE = False
 from async_timeout import timeout
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -86,15 +81,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
         'no_warnings': True,
         'default_search': 'auto',
         'source_address': '0.0.0.0',
+        'impersonate': 'firefox',
     }
-
-    # Add impersonate option if available
-    if IMPERSONATE_AVAILABLE:
-        try:
-            YTDL_OPTIONS['impersonate'] = ImpersonateTarget('firefox')
-        except Exception:
-            # If firefox target doesn't work, try without impersonation
-            pass
 
     FFMPEG_OPTIONS = {
         'before_options':
