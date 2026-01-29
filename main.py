@@ -178,8 +178,22 @@ class YTDLSource(discord.PCMVolumeTransformer):
                         'Couldn\'t retrieve any matches for `{}`'.format(
                             webpage_url))
 
+        # Build ffmpeg options with HTTP headers to avoid 403 errors
+        ffmpeg_options = cls.FFMPEG_OPTIONS.copy()
+
+        # Extract HTTP headers from yt-dlp info
+        http_headers = info.get('http_headers', {})
+        if http_headers:
+            logger.debug(f'Adding HTTP headers to ffmpeg for {info.get("title", "unknown")}: {list(http_headers.keys())}')
+            # Build header string for ffmpeg
+            header_list = [f"{k}: {v}" for k, v in http_headers.items()]
+            headers_option = ' -headers ' + repr('\r\n'.join(header_list) + '\r\n')
+            ffmpeg_options['before_options'] = ffmpeg_options.get('before_options', '') + headers_option
+        else:
+            logger.warning(f'No HTTP headers found in yt-dlp info for {info.get("title", "unknown")}, may encounter 403 errors')
+
         return cls(ctx,
-                   discord.FFmpegPCMAudio(info['url'], **cls.FFMPEG_OPTIONS),
+                   discord.FFmpegPCMAudio(info['url'], **ffmpeg_options),
                    data=info)
 
     @staticmethod
