@@ -79,6 +79,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         'ignoreerrors': False,
         'logtostderr': False,
         'quiet': True,
+        'verbose': True,
         'no_warnings': True,
         'default_search': 'auto',
         'source_address': '0.0.0.0',
