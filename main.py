@@ -301,6 +301,14 @@ class VoiceState(discord.VoiceState):
     def is_playing(self):
         return self.voice and self.current
 
+    def is_voice_connected(self) -> bool:
+        """Check if the voice connection is healthy."""
+        if not self.voice:
+            return False
+        if not self.voice.is_connected():
+            return False
+        return True
+
     async def audio_player_task(self):
         logger.info(f'Audio player task started for guild {self._ctx.guild.name}')
         while True:
@@ -324,10 +332,16 @@ class VoiceState(discord.VoiceState):
                     return
 
             # Check if we have a voice connection, if not try to get it from the guild
-            if not self.voice:
+            if not self.voice or not self.is_voice_connected():
+                logger.warning(f'Voice connection stale or missing in guild {self._ctx.guild.name}, attempting to recover...')
                 self.voice = self._ctx.guild.voice_client
-                if not self.voice:
-                    logger.error(f'No voice connection available in guild {self._ctx.guild.name}')
+
+                # If still no valid connection, we can't proceed
+                if not self.voice or not self.voice.is_connected():
+                    logger.error(f'No voice connection available in guild {self._ctx.guild.name}. User needs to use /come or /play to reconnect.')
+                    # Put the song back in the queue so it's not lost
+                    if self.current:
+                        logger.info(f'Song "{self.current.source.title}" will need to be re-queued after reconnection')
                     return
                 else:
                     logger.info(f'Retrieved voice connection from guild {self._ctx.guild.name}')
@@ -421,6 +435,50 @@ class Music(commands.Cog):
         self.bot: commands.Bot = bot
         self.voice_states = {}
 
+    async def connect_with_retry(self, channel: discord.VoiceChannel, max_retries: int = 3, delay: float = 2.0) -> discord.VoiceClient:
+        """Connect to a voice channel with retry logic for handling stale connections."""
+        last_error = None
+
+        for attempt in range(1, max_retries + 1):
+            try:
+                logger.info(f'Voice connection attempt {attempt}/{max_retries} to {channel.name}')
+
+                # Check if there's an existing stale voice client and clean it up
+                existing_client = channel.guild.voice_client
+                if existing_client:
+                    logger.info(f'Found existing voice client, cleaning up...')
+                    try:
+                        await existing_client.disconnect(force=True)
+                    except Exception as e:
+                        logger.warning(f'Error disconnecting existing client: {e}')
+                    await asyncio.sleep(0.5)
+
+                # Attempt connection with timeout
+                voice_client = await asyncio.wait_for(
+                    channel.connect(reconnect=True, self_deaf=True),
+                    timeout=30.0
+                )
+                logger.info(f'Successfully connected to {channel.name} on attempt {attempt}')
+                return voice_client
+
+            except asyncio.TimeoutError as e:
+                last_error = e
+                logger.warning(f'Voice connection attempt {attempt} timed out for {channel.name}')
+                if attempt < max_retries:
+                    logger.info(f'Retrying in {delay} seconds...')
+                    await asyncio.sleep(delay)
+                    delay *= 1.5  # Exponential backoff
+
+            except Exception as e:
+                last_error = e
+                logger.error(f'Voice connection attempt {attempt} failed: {e}')
+                if attempt < max_retries:
+                    logger.info(f'Retrying in {delay} seconds...')
+                    await asyncio.sleep(delay)
+                    delay *= 1.5
+
+        raise VoiceError(f'Failed to connect to voice after {max_retries} attempts: {last_error}')
+
     def get_voice_state(self, ctx: commands.Context):
         state = self.voice_states.get(ctx.guild.id)
         if not state:
@@ -474,9 +532,12 @@ class Music(commands.Cog):
 
         try:
             logger.info(f'Connecting to voice channel {destination.name}')
-            ctx.voice_state.voice = await destination.connect(reconnect=False)
+            ctx.voice_state.voice = await self.connect_with_retry(destination)
             logger.info(f'Successfully connected to {destination.name}')
             await ctx.send('Joining {} '.format(ctx.author.mention))
+        except VoiceError as e:
+            logger.error(f'Failed to connect in come command after retries: {e}')
+            await ctx.send(f'Failed to connect to voice channel after multiple attempts. Try again or use /fix first.')
         except Exception as e:
             logger.error(f'Failed to connect in come command: {e}')
             await ctx.send(f'Failed to connect to voice channel: {e}')
@@ -495,8 +556,12 @@ class Music(commands.Cog):
             await ctx.send('Joining {}'.format(destination))
             return
 
-        ctx.voice_state.voice = await destination.connect()
-        await ctx.send('Joining {}'.format(destination))
+        try:
+            ctx.voice_state.voice = await self.connect_with_retry(destination)
+            await ctx.send('Joining {}'.format(destination))
+        except VoiceError as e:
+            logger.error(f'Failed to connect in summon command: {e}')
+            await ctx.send(f'Failed to connect to voice channel after multiple attempts.')
 
     @commands.hybrid_command(name='leave', aliases=['l'])
     #@commands.has_permissions(manage_guild=True)
@@ -712,8 +777,13 @@ class Music(commands.Cog):
 
         if not ctx.voice_state.voice:
             destination = ctx.author.voice.channel
-            ctx.voice_state.voice = await destination.connect()
-            await ctx.send('Joining {} '.format(ctx.author.mention))
+            try:
+                ctx.voice_state.voice = await self.connect_with_retry(destination)
+                await ctx.send('Joining {} '.format(ctx.author.mention))
+            except VoiceError as e:
+                logger.error(f'Failed to connect in play command: {e}')
+                await ctx.send(f'Failed to connect to voice channel. Try /fix then try again.')
+                return
 
         async with ctx.typing():
             try:
@@ -749,17 +819,40 @@ class Music(commands.Cog):
     #@commands.has_permissions(manage_guild=True)
     async def fix(self, ctx: commands.Context):
         """Tries to fix the bot if broken, IF THIS DOESN'T WORK, use forcerestart"""
+        logger.info(f'Fix command called by {ctx.author} in guild {ctx.guild.name}')
         try:
+            # Clear the song queue
+            if ctx.guild.id in self.voice_states:
+                voice_state = self.voice_states[ctx.guild.id]
+                voice_state.songs.clear()
 
-            #ctx.voice_state.voice.pause()
-            #ctx.voice_state.skip()
-            ctx.voice_state.songs.clear()
-            await ctx.voice_state.stop()
-            del self.voice_states[ctx.guild.id]
-            await ctx.send('fixing')
+                # Cancel the audio player task
+                if voice_state.audio_player and not voice_state.audio_player.done():
+                    voice_state.audio_player.cancel()
+                    logger.info(f'Cancelled audio player task for guild {ctx.guild.name}')
 
-        except:
-            await ctx.send('fixing')
+            # Force disconnect any existing voice client
+            existing_client = ctx.guild.voice_client
+            if existing_client:
+                try:
+                    await existing_client.disconnect(force=True)
+                    logger.info(f'Force disconnected voice client for guild {ctx.guild.name}')
+                except Exception as e:
+                    logger.warning(f'Error force disconnecting: {e}')
+
+            # Clean up voice state
+            if ctx.guild.id in self.voice_states:
+                del self.voice_states[ctx.guild.id]
+                logger.info(f'Deleted voice state for guild {ctx.guild.name}')
+
+            await ctx.send('Fixed! Use /come or /play to reconnect.')
+
+        except Exception as e:
+            logger.error(f'Error in fix command: {e}')
+            # Still try to clean up
+            if ctx.guild.id in self.voice_states:
+                del self.voice_states[ctx.guild.id]
+            await ctx.send('Fixed (with errors). Use /come or /play to reconnect.')
     
     @commands.hybrid_command(name='servercount')
     #@commands.has_permissions(manage_guild=True)
